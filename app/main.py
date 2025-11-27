@@ -4,6 +4,11 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Sona AI - Stock Analyser",
@@ -20,18 +25,59 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.on_event("startup")
+async def startup_event():
+    """Verify all required files and directories exist"""
+    logger.info("Starting Sona AI Stock Analyser...")
+    
+    # Check if static directory exists
+    static_dir = "app/static"
+    if not os.path.exists(static_dir):
+        logger.error(f"Static directory not found: {static_dir}")
+    else:
+        logger.info(f"✓ Static directory found: {static_dir}")
+        
+    # Check if required HTML files exist
+    required_files = ["landing.html", "index.html"]
+    for file in required_files:
+        file_path = os.path.join(static_dir, file)
+        if os.path.exists(file_path):
+            logger.info(f"✓ Found: {file}")
+        else:
+            logger.error(f"✗ Missing: {file}")
+    
+    logger.info("Startup complete!")
+
 # Mount static files
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+try:
+    app.mount("/static", StaticFiles(directory="app/static"), name="static")
+    logger.info("✓ Static files mounted successfully")
+except Exception as e:
+    logger.error(f"Failed to mount static files: {e}")
 
 templates = Jinja2Templates(directory="app/static")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    return templates.TemplateResponse("landing.html", {"request": request})
+    try:
+        return templates.TemplateResponse("landing.html", {"request": request})
+    except Exception as e:
+        logger.error(f"Error serving landing page: {e}")
+        return HTMLResponse(
+            content=f"<h1>Error loading page</h1><p>{str(e)}</p>",
+            status_code=500
+        )
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def read_dashboard(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    try:
+        return templates.TemplateResponse("index.html", {"request": request})
+    except Exception as e:
+        logger.error(f"Error serving dashboard: {e}")
+        return HTMLResponse(
+            content=f"<h1>Error loading dashboard</h1><p>{str(e)}</p>",
+            status_code=500
+        )
 
 from app.api import routes
 
@@ -42,5 +88,7 @@ async def health_check():
     return {
         "status": "ok", 
         "message": "Sona AI Stock Analysis API is running",
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "python_version": os.sys.version
     }
+

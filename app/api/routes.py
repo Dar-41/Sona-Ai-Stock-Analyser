@@ -368,12 +368,19 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
     def try_download(ticker, attempt=1):
         """Try to download data with retry logic"""
         try:
-            print(f"Attempting to fetch {ticker} (attempt {attempt}/{max_retries})...")
+            print(f"[FETCH] Attempting to fetch {ticker} (attempt {attempt}/{max_retries})...")
             
-            # Create ticker object with session
-            ticker_obj = yf.Ticker(ticker)
+            # Create ticker object with custom headers to avoid blocking
+            import requests
+            session = requests.Session()
+            session.headers.update({
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            })
+            
+            ticker_obj = yf.Ticker(ticker, session=session)
             
             # Use history method instead of download for better error handling
+            print(f"[FETCH] Calling yfinance history for {ticker}...")
             df = ticker_obj.history(
                 period=period,
                 interval=yf_interval,
@@ -382,23 +389,25 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
             )
             
             if df.empty:
-                print(f"No data returned for {ticker}")
+                print(f"[FETCH] ❌ No data returned for {ticker}")
                 return None
-                
+            
+            print(f"[FETCH] ✅ Successfully fetched {len(df)} rows for {ticker}")
             return df
             
         except HTTPError as e:
             if e.response.status_code == 429:  # Rate limit
-                print(f"Rate limited for {ticker}, waiting {retry_delay * attempt}s...")
+                print(f"[FETCH] ⚠️  Rate limited for {ticker}, waiting {retry_delay * attempt}s...")
                 if attempt < max_retries:
                     time.sleep(retry_delay * attempt)  # Exponential backoff
                     return try_download(ticker, attempt + 1)
-            print(f"HTTP Error for {ticker}: {e}")
+            print(f"[FETCH] ❌ HTTP Error for {ticker}: {e}")
             return None
             
         except (ConnectionError, Timeout) as e:
-            print(f"Network error for {ticker}: {e}")
+            print(f"[FETCH] ❌ Network error for {ticker}: {e}")
             if attempt < max_retries:
+                print(f"[FETCH] 🔄 Retrying in {retry_delay * attempt}s...")
                 time.sleep(retry_delay * attempt)
                 return try_download(ticker, attempt + 1)
             return None
@@ -407,14 +416,15 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
             error_msg = str(e).lower()
             # Handle specific yfinance errors
             if "no price data found" in error_msg or "delisted" in error_msg:
-                print(f"No price data available for {ticker}")
+                print(f"[FETCH] ❌ No price data available for {ticker}: {e}")
                 return None
             elif "404" in error_msg or "not found" in error_msg:
-                print(f"Ticker {ticker} not found")
+                print(f"[FETCH] ❌ Ticker {ticker} not found")
                 return None
             else:
-                print(f"Error fetching {ticker}: {e}")
+                print(f"[FETCH] ❌ Error fetching {ticker}: {e}")
                 if attempt < max_retries:
+                    print(f"[FETCH] 🔄 Retrying in {retry_delay * attempt}s...")
                     time.sleep(retry_delay * attempt)
                     return try_download(ticker, attempt + 1)
                 return None

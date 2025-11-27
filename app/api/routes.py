@@ -526,20 +526,14 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
                 symbol = alt
                 break
     
-    # If still no data, use sample data as last resort
+    # If still no data, return None (don't use fake sample data)
     if df is None or df.empty:
         print(f"[DATA] ❌ yfinance failed for {symbol}")
-        print(f"[DATA] Strategy 3: Using sample data fallback...")
-        try:
-            sample_data = generate_sample_data(symbol, timeframe)
-            if sample_data:
-                print(f"[DATA] ✅ Sample data SUCCESS! Got {len(sample_data)} data points")
-                print(f"[DATA] ⚠️  NOTE: This is demonstration data, not real market data")
-                return sample_data
-        except Exception as e:
-            print(f"[DATA] ❌ Sample data generation failed: {e}")
-        
-        print(f"[DATA] ❌ ALL STRATEGIES FAILED for {symbol}")
+        print(f"[DATA] ❌ ALL DATA SOURCES FAILED for {symbol}")
+        print(f"[DATA] Please check:")
+        print(f"  1. Symbol is correct")
+        print(f"  2. Alpha Vantage API key is set in Railway")
+        print(f"  3. Not hitting API rate limits")
         return None
     
     try:

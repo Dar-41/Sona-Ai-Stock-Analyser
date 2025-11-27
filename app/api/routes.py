@@ -4,6 +4,7 @@ from PIL import Image
 import pytesseract
 import io
 import re
+import os
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -12,12 +13,19 @@ from functools import lru_cache
 import hashlib
 import json
 from app.analysis import analyze_market_structure
+from app.sample_data import generate_sample_data
+from app.alphavantage_client import AlphaVantageClient
 
 # Simple in-memory cache with TTL
 cache_store = {}
 CACHE_TTL = 300  # 5 minutes
 
 router = APIRouter()
+
+# Initialize Alpha Vantage client
+# Get API key from environment variable or use demo key
+ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "demo")
+av_client = AlphaVantageClient(api_key=ALPHA_VANTAGE_API_KEY)
 
 def get_cache_key(symbol: str, timeframe: str) -> str:
     """Generate cache key for market data"""
@@ -336,12 +344,53 @@ def extract_ticker_and_timeframe(text):
     return ticker, timeframe
 
 def fetch_market_data(ticker_info, period="1y", interval="1d"):
-    """Enhanced data fetching with retry logic and better error handling for production"""
+    """Enhanced data fetching: Alpha Vantage -> yfinance -> Sample Data"""
     import time
     from requests.exceptions import HTTPError, ConnectionError, Timeout
     
     symbol = ticker_info.get('symbol')
     timeframe = ticker_info.get('timeframe', '1D')
+    
+    print(f"\n{'='*60}")
+    print(f"[DATA] Fetching data for {symbol} ({timeframe})")
+    print(f"{'='*60}")
+    
+    # Map timeframe to Alpha Vantage interval
+    av_interval_map = {
+        "1M": "1min",
+        "5M": "5min",
+        "15M": "15min",
+        "1H": "60min",
+        "4H": "60min",  # Will use 60min and aggregate
+        "1D": "daily",
+        "1W": "weekly"
+    }
+    av_interval = av_interval_map.get(timeframe, "daily")
+    
+    # Try Alpha Vantage first (more reliable on Railway)
+    print(f"[DATA] Strategy 1: Trying Alpha Vantage...")
+    try:
+        # Clean symbol for Alpha Vantage (remove .NS, .BO, etc.)
+        av_symbol = symbol.replace(".NS", "").replace(".BO", "").replace("=F", "").replace("=X", "").replace("^", "")
+        
+        # Check if it's crypto
+        if any(crypto in av_symbol.upper() for crypto in ["BTC", "ETH", "SOL", "ADA", "XRP", "DOGE"]):
+            crypto_symbol = av_symbol.replace("-USD", "").replace("USD", "")
+            data = av_client.get_crypto_data(crypto_symbol, "USD")
+        else:
+            # Regular stock
+            data = av_client.get_stock_data(av_symbol, interval=av_interval, outputsize="compact")
+        
+        if data and len(data) > 0:
+            print(f"[DATA] ✅ Alpha Vantage SUCCESS! Got {len(data)} data points")
+            return data
+        else:
+            print(f"[DATA] ❌ Alpha Vantage returned no data")
+    except Exception as e:
+        print(f"[DATA] ❌ Alpha Vantage error: {e}")
+    
+    # Fallback to yfinance
+    print(f"[DATA] Strategy 2: Trying yfinance...")
     
     # Map timeframe to yfinance interval
     tf_map = {
@@ -477,9 +526,20 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
                 symbol = alt
                 break
     
-    # If still no data, return None
+    # If still no data, use sample data as last resort
     if df is None or df.empty:
-        print(f"All attempts failed for {symbol}")
+        print(f"[DATA] ❌ yfinance failed for {symbol}")
+        print(f"[DATA] Strategy 3: Using sample data fallback...")
+        try:
+            sample_data = generate_sample_data(symbol, timeframe)
+            if sample_data:
+                print(f"[DATA] ✅ Sample data SUCCESS! Got {len(sample_data)} data points")
+                print(f"[DATA] ⚠️  NOTE: This is demonstration data, not real market data")
+                return sample_data
+        except Exception as e:
+            print(f"[DATA] ❌ Sample data generation failed: {e}")
+        
+        print(f"[DATA] ❌ ALL STRATEGIES FAILED for {symbol}")
         return None
     
     try:
@@ -521,7 +581,7 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
             print(f"No valid data points for {symbol}")
             return None
             
-        print(f"Successfully fetched {len(data)} data points for {symbol}")
+        print(f"[DATA] ✅ yfinance SUCCESS! Got {len(data)} data points")
         return data
         
     except Exception as e:

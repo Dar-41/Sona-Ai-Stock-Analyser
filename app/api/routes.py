@@ -259,7 +259,7 @@ def extract_ticker_and_timeframe(text):
     return ticker, timeframe
 
 def fetch_market_data(ticker_info, period="1y", interval="1d"):
-    """Enhanced data fetching with better error handling"""
+    """Enhanced data fetching with better error handling and performance"""
     try:
         symbol = ticker_info.get('symbol')
         timeframe = ticker_info.get('timeframe', '1D')
@@ -271,15 +271,26 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
         }
         yf_interval = tf_map.get(timeframe, '1d')
         
-        # Adjust period based on interval
+        # Adjust period based on interval for optimal performance
         period_map = {
-            "1m": "7d", "5m": "60d", "15m": "60d", "1h": "730d",
-            "1d": "2y", "1wk": "5y"
+            "1m": "5d",      # Reduced from 7d for faster loading
+            "5m": "30d",     # Reduced from 60d
+            "15m": "30d",    # Reduced from 60d
+            "1h": "90d",     # Reduced from 730d for faster loading
+            "1d": "1y",      # Reduced from 2y
+            "1wk": "3y"      # Reduced from 5y
         }
         period = period_map.get(yf_interval, "1y")
         
-        # Download data
-        df = yf.download(symbol, period=period, interval=yf_interval, progress=False)
+        # Download data with optimizations
+        df = yf.download(
+            symbol, 
+            period=period, 
+            interval=yf_interval, 
+            progress=False,
+            threads=False,  # Disable multi-threading for faster single requests
+            timeout=10      # Add timeout to prevent hanging
+        )
         
         if df.empty:
             # Try alternative ticker formats
@@ -290,11 +301,16 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
                 alternatives.append(f"{symbol}-USD")
                 alternatives.append(f"{symbol}.NS")  # NSE India
                 alternatives.append(f"{symbol}.BO")  # BSE India
-                alternatives.append(f"{symbol}.L")   # London
-                alternatives.append(f"{symbol}.TO")  # Toronto
             
             for alt in alternatives:
-                df = yf.download(alt, period=period, interval=yf_interval, progress=False)
+                df = yf.download(
+                    alt, 
+                    period=period, 
+                    interval=yf_interval, 
+                    progress=False,
+                    threads=False,
+                    timeout=10
+                )
                 if not df.empty:
                     print(f"Found data using alternative ticker: {alt}")
                     break
@@ -307,7 +323,7 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
         
-        # Format data for frontend
+        # Format data for frontend - optimized
         data = []
         for _, row in df.iterrows():
             time_val = row.iloc[0].timestamp() if hasattr(row.iloc[0], 'timestamp') else row.iloc[0]
@@ -426,6 +442,15 @@ async def get_market_data(symbol: str, timeframe: str = "1D"):
     # Normalize the ticker
     normalized_symbol = normalize_ticker(symbol)
     
+    # Check cache first
+    cache_key = get_cache_key(normalized_symbol, timeframe)
+    cached_data = get_from_cache(cache_key)
+    
+    if cached_data:
+        print(f"Cache hit for {normalized_symbol} ({timeframe})")
+        return cached_data
+    
+    # Fetch fresh data
     data = fetch_market_data({"symbol": normalized_symbol, "timeframe": timeframe})
     if not data:
         raise HTTPException(status_code=404, detail=f"No data found for {symbol}. Try: BTC-USD, GC=F, EURUSD=X, or stock symbols.")
@@ -435,9 +460,14 @@ async def get_market_data(symbol: str, timeframe: str = "1D"):
     df = df.rename(columns={"open": "Open", "high": "High", "low": "Low", "close": "Close", "volume": "Volume"})
     analysis_result = analyze_market_structure(df, timeframe)
     
-    return {
+    result = {
         "symbol": normalized_symbol,
         "data": data,
         "currency": get_currency_symbol(normalized_symbol),
         "analysis": analysis_result
     }
+    
+    # Cache the result
+    set_cache(cache_key, result)
+    
+    return result

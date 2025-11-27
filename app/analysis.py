@@ -336,21 +336,32 @@ def analyze_market_structure(df, timeframe="1D"):
     # Get timeframe parameters
     tf_params = get_timeframe_params(timeframe)
     
-    # Calculate Indicators
-    df['EMA_200'] = calculate_ema(df, 200)
-    df['EMA_50'] = calculate_ema(df, 50)
-    df['RSI'] = calculate_rsi(df)
-    df['ATR'] = calculate_atr(df)
+    # Calculate Indicators with error handling
+    try:
+        df['EMA_200'] = calculate_ema(df, 200)
+        df['EMA_50'] = calculate_ema(df, 50)
+        df['RSI'] = calculate_rsi(df)
+        df['ATR'] = calculate_atr(df)
+    except Exception as e:
+        print(f"Error calculating indicators: {e}")
+        # Set default values if calculation fails
+        df['EMA_200'] = df['Close']
+        df['EMA_50'] = df['Close']
+        df['RSI'] = 50
+        df['ATR'] = df['Close'] * 0.02
     
     # SMC Analysis with timeframe-adjusted lookback
     obs = identify_order_blocks(df, tf_params["lookback"])
     fvgs = identify_fvg(df)
     supports, resistances = find_support_resistance(df, tf_params["lookback"])
     
-    # Current values
+    # Current values with NaN handling
     last_row = df.iloc[-1]
-    current_price = last_row['Close']
-    atr = last_row['ATR']
+    current_price = float(last_row['Close']) if not pd.isna(last_row['Close']) else 0
+    atr = float(last_row['ATR']) if not pd.isna(last_row['ATR']) else current_price * 0.02
+    rsi_value = float(last_row['RSI']) if not pd.isna(last_row['RSI']) else 50
+    ema_50 = float(last_row['EMA_50']) if not pd.isna(last_row['EMA_50']) else current_price
+    ema_200 = float(last_row['EMA_200']) if not pd.isna(last_row['EMA_200']) else current_price
     
     signal = "NEUTRAL"
     score = 5
@@ -362,14 +373,14 @@ def analyze_market_structure(df, timeframe="1D"):
     reasons.append(f"{moon_phase['emoji']} {moon_phase['phase_name']}: {moon_phase['description']}")
     
     # Trend Analysis
-    if last_row['Close'] > last_row['EMA_200']:
+    if current_price > ema_200:
         score += 1.5
         reasons.append("✓ Price above EMA 200 (Uptrend)")
     else:
         score -= 1.5
         reasons.append("✗ Price below EMA 200 (Downtrend)")
     
-    if last_row['EMA_50'] > last_row['EMA_200']:
+    if ema_50 > ema_200:
         score += 1
         reasons.append("✓ EMA 50 > EMA 200 (Bullish)")
     else:
@@ -377,15 +388,15 @@ def analyze_market_structure(df, timeframe="1D"):
         reasons.append("✗ EMA 50 < EMA 200 (Bearish)")
         
     # RSI Analysis
-    if last_row['RSI'] < 30:
+    if rsi_value < 30:
         score += 2
         reasons.append("✓ RSI Oversold (Bullish)")
         signal = "BUY"
-    elif last_row['RSI'] > 70:
+    elif rsi_value > 70:
         score -= 2
         reasons.append("✗ RSI Overbought (Bearish)")
         signal = "SELL"
-    elif 40 < last_row['RSI'] < 60:
+    elif 40 < rsi_value < 60:
         reasons.append("○ RSI Neutral")
         
     # Order Block Confluence
@@ -417,13 +428,23 @@ def analyze_market_structure(df, timeframe="1D"):
     # Calculate Entry and Targets with timeframe adjustment
     trade_levels = calculate_entry_and_targets(df, signal, current_price, atr, supports, resistances, obs, timeframe)
     
+    # Determine EMA trend
+    if ema_50 > ema_200:
+        ema_trend = "BULLISH"
+    elif ema_50 < ema_200:
+        ema_trend = "BEARISH"
+    else:
+        ema_trend = "NEUTRAL"
+    
     return {
         "signal": signal,
-        "score": min(max(score, 0), 10),
+        "score": min(max(round(score, 1), 0), 10),
+        "ema_trend": ema_trend,
+        "rsi": round(rsi_value, 2),
         "indicators": {
-            "rsi": round(last_row['RSI'], 2),
-            "ema_50": round(last_row['EMA_50'], 2),
-            "ema_200": round(last_row['EMA_200'], 2),
+            "rsi": round(rsi_value, 2),
+            "ema_50": round(ema_50, 2),
+            "ema_200": round(ema_200, 2),
             "atr": round(atr, 2)
         },
         "smc": {

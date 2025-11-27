@@ -9,6 +9,7 @@ const App = () => {
     const [marketData, setMarketData] = useState(null);
     const [analysis, setAnalysis] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [filteredSuggestions, setFilteredSuggestions] = useState([]);
     const [currency, setCurrency] = useState('$');
@@ -357,27 +358,36 @@ const App = () => {
         e.preventDefault();
         if (!ticker) return;
 
+        setLoading(true);
         setStatus(`Fetching ${timeframe} data for ${ticker}...`);
         try {
             const response = await fetch(`/api/market/${ticker}?timeframe=${timeframe}`);
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch data: ${response.statusText}`);
+            }
+
             const result = await response.json();
             if (result.data && result.analysis) {
                 setMarketData(result.data);
                 setAnalysis(result.analysis);
                 setCurrency(result.currency || '$');
-                setStatus(`Loaded ${ticker.toUpperCase()} - ${timeframe} `);
+                setStatus(`✓ Loaded ${ticker.toUpperCase()} - ${timeframe}`);
                 if (result.analysis.trade_levels) {
                     setStopLoss(result.analysis.trade_levels.stop_loss);
                 }
             } else {
                 setStatus('No data found for this symbol');
+                setMarketData(null);
+                setAnalysis(null);
             }
         } catch (error) {
-            setStatus('Error fetching data');
+            setStatus(`Error: ${error.message || 'Failed to fetch data'}`);
+            setMarketData(null);
+            setAnalysis(null);
             console.error('Fetch error:', error);
         } finally {
-            // Assuming setLoading is a state setter, if not, remove or adjust
-            // setLoading(false); 
+            setLoading(false);
         }
     };
 
@@ -386,20 +396,31 @@ const App = () => {
         setTimeframe(newTf);
         if (ticker && marketData) {
             // Refetch data with new timeframe
+            setLoading(true);
             setStatus(`Switching to ${newTf}...`);
             try {
                 const response = await fetch(`/api/market/${ticker}?timeframe=${newTf}`);
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch data: ${response.statusText}`);
+                }
+
                 const result = await response.json();
                 if (result.data) {
                     setMarketData(result.data);
                     setAnalysis(result.analysis);
-                    setStatus(`Loaded ${ticker} (${newTf})`);
+                    setStatus(`✓ Loaded ${ticker} (${newTf})`);
                     if (result.analysis && result.analysis.trade_levels) {
                         setStopLoss(result.analysis.trade_levels.stop_loss);
                     }
+                } else {
+                    setStatus(`No data available for ${newTf} timeframe`);
                 }
             } catch (error) {
-                setStatus('Error switching timeframe');
+                setStatus(`Error switching timeframe: ${error.message}`);
+                console.error('Timeframe change error:', error);
+            } finally {
+                setLoading(false);
             }
         }
     };
@@ -426,7 +447,7 @@ const App = () => {
                 </div>
                 <div className="flex items-center gap-2">
                     <div className="dark-card px-3 py-2 rounded-full flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-400 pulse"></div>
+                        <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-400 pulse' : 'bg-green-400 pulse'}`}></div>
                         <span className="text-xs text-slate-300 font-medium">{status}</span>
                     </div>
                 </div>
@@ -485,10 +506,10 @@ const App = () => {
                                     <button
                                         key={tf}
                                         onClick={() => handleTimeframeChange(tf)}
-                                        className={`py - 2 px - 3 rounded - xl text - xs font - bold transition - all ${timeframe === tf
+                                        className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${timeframe === tf
                                             ? 'btn-purple text-white'
                                             : 'btn-dark text-slate-300 hover:text-white'
-                                            } `}
+                                            }`}
                                     >
                                         {tf}
                                     </button>
@@ -639,10 +660,10 @@ const App = () => {
                             <div className="text-center mb-4">
                                 <div className="text-6xl mb-2">{analysis.moon_phase.emoji}</div>
                                 <div className="text-lg font-bold text-white mb-1">{analysis.moon_phase.phase_name}</div>
-                                <div className={`text - xs font - bold uppercase px - 3 py - 1 rounded - full inline - block ${analysis.moon_phase.bias === 'BULLISH' ? 'bg-green-500/20 text-green-400' :
+                                <div className={`text-xs font-bold uppercase px-3 py-1 rounded-full inline-block ${analysis.moon_phase.bias === 'BULLISH' ? 'bg-green-500/20 text-green-400' :
                                     analysis.moon_phase.bias === 'BEARISH' ? 'bg-red-500/20 text-red-400' :
                                         'bg-slate-500/20 text-slate-400'
-                                    } `}>
+                                    }`}>
                                     {analysis.moon_phase.bias}
                                 </div>
                             </div>

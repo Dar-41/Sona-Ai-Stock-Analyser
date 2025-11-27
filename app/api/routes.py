@@ -13,7 +13,7 @@ from functools import lru_cache
 import hashlib
 import json
 from app.analysis import analyze_market_structure
-from app.twelvedata_client import TwelveDataClient
+from app.finnhub_client import FinnhubClient
 
 # Simple in-memory cache with TTL
 cache_store = {}
@@ -21,10 +21,10 @@ CACHE_TTL = 300  # 5 minutes
 
 router = APIRouter()
 
-# Initialize Twelve Data client
+# Initialize Finnhub client
 # Get API key from environment or use demo
-TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY", "demo")
-td_client = TwelveDataClient(api_key=TWELVE_DATA_API_KEY)
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "demo")
+fh_client = FinnhubClient(api_key=FINNHUB_API_KEY)
 
 def get_cache_key(symbol: str, timeframe: str) -> str:
     """Generate cache key for market data"""
@@ -354,35 +354,56 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
     print(f"[FETCH] Fetching data for {symbol} ({timeframe})")
     print(f"{'='*60}")
     
-    # Try Twelve Data first (works reliably on Railway)
-    print(f"[FETCH] Strategy 1: Trying Twelve Data API...")
+    # Try Finnhub first (free tier supports stocks, forex, crypto)
+    print(f"[FETCH] Strategy 1: Trying Finnhub API...")
     try:
-        # Clean symbol for Twelve Data
-        td_symbol = symbol
+        # Map timeframe to Finnhub resolution
+        resolution_map = {
+            "1M": "1",
+            "5M": "5",
+            "15M": "15",
+            "1H": "60",
+            "4H": "60",  # Will use 60min
+            "1D": "D",
+            "1W": "W"
+        }
+        resolution = resolution_map.get(timeframe, "D")
+        
+        # Format symbol for Finnhub
+        fh_symbol = symbol
         
         # Handle special formats
         if symbol.endswith(".NS") or symbol.endswith(".BO"):
-            # Indian stocks - Twelve Data uses different format
-            td_symbol = symbol.replace(".NS", "").replace(".BO", "")
+            # Indian stocks - keep as is for now
+            fh_symbol = symbol
         elif "=F" in symbol:
-            # Futures - remove =F
-            td_symbol = symbol.replace("=F", "")
-        elif "=X" in symbol:
-            # Forex - Twelve Data uses / format
-            td_symbol = symbol.replace("=X", "").replace("USD", "/USD")
-        elif "^" in symbol:
-            # Indices - remove ^
-            td_symbol = symbol.replace("^", "")
+            # Commodities - Finnhub uses different format
+            # GC=F (Gold) -> OANDA:XAU_USD
+            if "GC" in symbol:
+                fh_symbol = "OANDA:XAU_USD"
+            elif "SI" in symbol:
+                fh_symbol = "OANDA:XAG_USD"
+            else:
+                fh_symbol = symbol.replace("=F", "")
+        elif "BTC" in symbol or "ETH" in symbol:
+            # Crypto - use Binance format
+            crypto = symbol.split("-")[0] if "-" in symbol else symbol.replace("USD", "")
+            fh_symbol = f"BINANCE:{crypto}USDT"
+        elif "/" in symbol or "USD" in symbol:
+            # Forex - use OANDA format
+            if "/" not in symbol:
+                symbol = symbol.replace("USD", "/USD")
+            fh_symbol = f"OANDA:{symbol.replace('/', '_')}"
         
-        data = td_client.get_time_series(td_symbol, interval=timeframe, outputsize=100)
+        data = fh_client.get_candles(fh_symbol, resolution=resolution, days_back=365)
         
         if data and len(data) > 0:
-            print(f"[FETCH] ✅ Twelve Data SUCCESS! Got {len(data)} data points")
+            print(f"[FETCH] ✅ Finnhub SUCCESS! Got {len(data)} data points")
             return data
         else:
-            print(f"[FETCH] ❌ Twelve Data returned no data")
+            print(f"[FETCH] ❌ Finnhub returned no data")
     except Exception as e:
-        print(f"[FETCH] ❌ Twelve Data error: {e}")
+        print(f"[FETCH] ❌ Finnhub error: {e}")
     
     # Fallback to yfinance
     print(f"[FETCH] Strategy 2: Trying yfinance...")

@@ -336,128 +336,188 @@ def extract_ticker_and_timeframe(text):
     return ticker, timeframe
 
 def fetch_market_data(ticker_info, period="1y", interval="1d"):
-    """Enhanced data fetching with better error handling and performance"""
-    try:
-        symbol = ticker_info.get('symbol')
-        timeframe = ticker_info.get('timeframe', '1D')
-        
-        # Map timeframe to yfinance interval
-        tf_map = {
-            "1M": "1m", "5M": "5m", "15M": "15m", "1H": "1h", "4H": "1h",
-            "1D": "1d", "1W": "1wk"
-        }
-        yf_interval = tf_map.get(timeframe, '1d')
-        
-        # Adjust period based on interval for optimal performance
-        period_map = {
-            "1m": "5d",      # Reduced from 7d for faster loading
-            "5m": "30d",     # Reduced from 60d
-            "15m": "30d",    # Reduced from 60d
-            "1h": "90d",     # Reduced from 730d for faster loading
-            "1d": "1y",      # Reduced from 2y
-            "1wk": "3y"      # Reduced from 5y
-        }
-        period = period_map.get(yf_interval, "1y")
-        
-        # Download data with optimizations
-        df = yf.download(
-            symbol, 
-            period=period, 
-            interval=yf_interval, 
-            progress=False,
-            threads=False,  # Disable multi-threading for faster single requests
-            timeout=10      # Add timeout to prevent hanging
-        )
-        
-        if df.empty:
-            # Try alternative ticker formats intelligently
-            alternatives = []
-            original_symbol = symbol.upper()
+    """Enhanced data fetching with retry logic and better error handling for production"""
+    import time
+    from requests.exceptions import HTTPError, ConnectionError, Timeout
+    
+    symbol = ticker_info.get('symbol')
+    timeframe = ticker_info.get('timeframe', '1D')
+    
+    # Map timeframe to yfinance interval
+    tf_map = {
+        "1M": "1m", "5M": "5m", "15M": "15m", "1H": "1h", "4H": "1h",
+        "1D": "1d", "1W": "1wk"
+    }
+    yf_interval = tf_map.get(timeframe, '1d')
+    
+    # Adjust period based on interval for optimal performance
+    period_map = {
+        "1m": "5d",
+        "5m": "30d",
+        "15m": "30d",
+        "1h": "90d",
+        "1d": "1y",
+        "1wk": "3y"
+    }
+    period = period_map.get(yf_interval, "1y")
+    
+    # Retry configuration
+    max_retries = 3
+    retry_delay = 1  # Start with 1 second
+    
+    def try_download(ticker, attempt=1):
+        """Try to download data with retry logic"""
+        try:
+            print(f"Attempting to fetch {ticker} (attempt {attempt}/{max_retries})...")
             
-            # Strategy 1: If it has no suffix, try common suffixes
-            if "." not in symbol and "=" not in symbol and "^" not in symbol and "-" not in symbol:
-                # Try crypto format
-                if len(original_symbol) <= 5 and original_symbol.isalpha():
-                    alternatives.append(f"{original_symbol}-USD")
+            # Create ticker object with session
+            ticker_obj = yf.Ticker(ticker)
+            
+            # Use history method instead of download for better error handling
+            df = ticker_obj.history(
+                period=period,
+                interval=yf_interval,
+                auto_adjust=True,
+                timeout=30  # Increased timeout for production
+            )
+            
+            if df.empty:
+                print(f"No data returned for {ticker}")
+                return None
                 
-                # Try Indian exchanges
-                alternatives.append(f"{original_symbol}.NS")  # NSE India
-                alternatives.append(f"{original_symbol}.BO")  # BSE India
-                
-                # Try as futures
-                if len(original_symbol) == 2:
-                    alternatives.append(f"{original_symbol}=F")
-                
-                # Try as index
-                alternatives.append(f"^{original_symbol}")
+            return df
             
-            # Strategy 2: If it's a potential forex pair without =X
-            if len(original_symbol) == 6 and original_symbol.isalpha():
-                if "=X" not in symbol:
-                    alternatives.append(f"{original_symbol}=X")
-            
-            # Strategy 3: If it ends with .NS, try .BO and vice versa
-            if symbol.endswith(".NS"):
-                alternatives.append(symbol.replace(".NS", ".BO"))
-            elif symbol.endswith(".BO"):
-                alternatives.append(symbol.replace(".BO", ".NS"))
-            
-            # Strategy 4: If it's a futures contract, try without =F
-            if symbol.endswith("=F"):
-                alternatives.append(symbol.replace("=F", ""))
-            
-            # Strategy 5: Try common ETF formats
-            if len(original_symbol) <= 4:
-                # Could be an ETF
-                alternatives.append(original_symbol)
-            
-            # Try each alternative
-            for alt in alternatives:
-                if alt == symbol:  # Skip if same as original
-                    continue
-                    
-                try:
-                    df = yf.download(
-                        alt, 
-                        period=period, 
-                        interval=yf_interval, 
-                        progress=False,
-                        threads=False,
-                        timeout=10
-                    )
-                    if not df.empty:
-                        print(f"✓ Found data using alternative ticker: {alt}")
-                        symbol = alt  # Update symbol to the working one
-                        break
-                except:
-                    continue
-        
-        if df.empty:
+        except HTTPError as e:
+            if e.response.status_code == 429:  # Rate limit
+                print(f"Rate limited for {ticker}, waiting {retry_delay * attempt}s...")
+                if attempt < max_retries:
+                    time.sleep(retry_delay * attempt)  # Exponential backoff
+                    return try_download(ticker, attempt + 1)
+            print(f"HTTP Error for {ticker}: {e}")
             return None
+            
+        except (ConnectionError, Timeout) as e:
+            print(f"Network error for {ticker}: {e}")
+            if attempt < max_retries:
+                time.sleep(retry_delay * attempt)
+                return try_download(ticker, attempt + 1)
+            return None
+            
+        except Exception as e:
+            error_msg = str(e).lower()
+            # Handle specific yfinance errors
+            if "no price data found" in error_msg or "delisted" in error_msg:
+                print(f"No price data available for {ticker}")
+                return None
+            elif "404" in error_msg or "not found" in error_msg:
+                print(f"Ticker {ticker} not found")
+                return None
+            else:
+                print(f"Error fetching {ticker}: {e}")
+                if attempt < max_retries:
+                    time.sleep(retry_delay * attempt)
+                    return try_download(ticker, attempt + 1)
+                return None
+    
+    # Try primary symbol
+    df = try_download(symbol)
+    
+    # If failed, try alternatives
+    if df is None or df.empty:
+        print(f"Primary fetch failed for {symbol}, trying alternatives...")
+        alternatives = []
+        original_symbol = symbol.upper()
         
+        # Strategy 1: If it has no suffix, try common suffixes
+        if "." not in symbol and "=" not in symbol and "^" not in symbol and "-" not in symbol:
+            # Try crypto format
+            if len(original_symbol) <= 5 and original_symbol.isalpha():
+                alternatives.append(f"{original_symbol}-USD")
+            
+            # Try Indian exchanges
+            alternatives.append(f"{original_symbol}.NS")
+            alternatives.append(f"{original_symbol}.BO")
+            
+            # Try as futures
+            if len(original_symbol) == 2:
+                alternatives.append(f"{original_symbol}=F")
+            
+            # Try as index
+            alternatives.append(f"^{original_symbol}")
+        
+        # Strategy 2: Forex pairs
+        if len(original_symbol) == 6 and original_symbol.isalpha():
+            if "=X" not in symbol:
+                alternatives.append(f"{original_symbol}=X")
+        
+        # Strategy 3: Exchange alternatives
+        if symbol.endswith(".NS"):
+            alternatives.append(symbol.replace(".NS", ".BO"))
+        elif symbol.endswith(".BO"):
+            alternatives.append(symbol.replace(".BO", ".NS"))
+        
+        # Try each alternative
+        for alt in alternatives:
+            if alt == symbol:
+                continue
+            
+            df = try_download(alt)
+            if df is not None and not df.empty:
+                print(f"✓ Success with alternative: {alt}")
+                symbol = alt
+                break
+    
+    # If still no data, return None
+    if df is None or df.empty:
+        print(f"All attempts failed for {symbol}")
+        return None
+    
+    try:
         # Reset index and handle MultiIndex columns
         df = df.reset_index()
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
         
-        # Format data for frontend - optimized
+        # Ensure required columns exist
+        required_cols = ['Open', 'High', 'Low', 'Close', 'Volume']
+        for col in required_cols:
+            if col not in df.columns:
+                print(f"Missing column {col} in data for {symbol}")
+                return None
+        
+        # Format data for frontend
         data = []
         for _, row in df.iterrows():
-            time_val = row.iloc[0].timestamp() if hasattr(row.iloc[0], 'timestamp') else row.iloc[0]
-            
-            data.append({
-                "time": int(time_val),
-                "open": float(row['Open']),
-                "high": float(row['High']),
-                "low": float(row['Low']),
-                "close": float(row['Close']),
-                "volume": int(row['Volume']) if not pd.isna(row['Volume']) else 0
-            })
+            try:
+                time_val = row.iloc[0]
+                if hasattr(time_val, 'timestamp'):
+                    time_val = time_val.timestamp()
+                elif isinstance(time_val, str):
+                    time_val = pd.to_datetime(time_val).timestamp()
+                
+                data.append({
+                    "time": int(time_val),
+                    "open": float(row['Open']),
+                    "high": float(row['High']),
+                    "low": float(row['Low']),
+                    "close": float(row['Close']),
+                    "volume": int(row['Volume']) if not pd.isna(row['Volume']) else 0
+                })
+            except Exception as row_error:
+                print(f"Error processing row: {row_error}")
+                continue
         
+        if not data:
+            print(f"No valid data points for {symbol}")
+            return None
+            
+        print(f"Successfully fetched {len(data)} data points for {symbol}")
         return data
         
     except Exception as e:
-        print(f"Error fetching data for {ticker_info.get('symbol')}: {e}")
+        print(f"Error formatting data for {symbol}: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 @router.post("/analyze")
@@ -556,59 +616,99 @@ async def analyze_chart(file: UploadFile = File(...)):
 
 @router.get("/market/{symbol}")
 async def get_market_data(symbol: str, timeframe: str = "1D"):
-    # Normalize the ticker
-    normalized_symbol = normalize_ticker(symbol)
-    
-    # Check cache first
-    cache_key = get_cache_key(normalized_symbol, timeframe)
-    cached_data = get_from_cache(cache_key)
-    
-    if cached_data:
-        print(f"Cache hit for {normalized_symbol} ({timeframe})")
-        return cached_data
-    
-    # Fetch fresh data
-    data = fetch_market_data({"symbol": normalized_symbol, "timeframe": timeframe})
-    if not data:
-        # Provide helpful error message with suggestions
-        error_msg = f"No data found for '{symbol}'."
+    """Get market data for a symbol with caching and error handling"""
+    try:
+        print(f"[API] Request for symbol: {symbol}, timeframe: {timeframe}")
         
-        # Suggest alternatives based on the symbol
-        suggestions = []
-        symbol_upper = symbol.upper()
+        # Normalize the ticker
+        normalized_symbol = normalize_ticker(symbol)
+        print(f"[API] Normalized to: {normalized_symbol}")
         
-        if "JIO" in symbol_upper:
-            suggestions.append("JIOFIN (Jio Financial Services)")
-        elif "GOLD" in symbol_upper or symbol_upper == "XAU":
-            suggestions.append("XAUUSD or GC=F (Gold)")
-        elif "SILVER" in symbol_upper or symbol_upper == "XAG":
-            suggestions.append("XAGUSD or SI=F (Silver)")
-        elif "OIL" in symbol_upper:
-            suggestions.append("XTIUSD or CL=F (Crude Oil)")
-        elif len(symbol_upper) <= 5 and symbol_upper.isalpha():
-            suggestions.append(f"{symbol_upper}.NS (NSE India)")
-            suggestions.append(f"{symbol_upper}-USD (Crypto)")
+        if not normalized_symbol:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Invalid symbol format: '{symbol}'. Please provide a valid ticker symbol."
+            )
         
-        if suggestions:
-            error_msg += f" Try: {', '.join(suggestions)}"
-        else:
-            error_msg += " Try: AAPL, BTC-USD, EURUSD, RELIANCE.NS, or XAUUSD"
+        # Check cache first
+        cache_key = get_cache_key(normalized_symbol, timeframe)
+        cached_data = get_from_cache(cache_key)
         
-        raise HTTPException(status_code=404, detail=error_msg)
+        if cached_data:
+            print(f"[API] Cache hit for {normalized_symbol} ({timeframe})")
+            return cached_data
         
-    # Perform Analysis
-    df = pd.DataFrame(data)
-    df = df.rename(columns={"open": "Open", "high": "High", "low": "Low", "close": "Close", "volume": "Volume"})
-    analysis_result = analyze_market_structure(df, timeframe)
-    
-    result = {
-        "symbol": normalized_symbol,
-        "data": data,
-        "currency": get_currency_symbol(normalized_symbol),
-        "analysis": analysis_result
-    }
-    
-    # Cache the result
-    set_cache(cache_key, result)
-    
-    return result
+        print(f"[API] Cache miss, fetching fresh data...")
+        
+        # Fetch fresh data
+        data = fetch_market_data({"symbol": normalized_symbol, "timeframe": timeframe})
+        
+        if not data:
+            print(f"[API] No data returned for {normalized_symbol}")
+            
+            # Provide helpful error message with suggestions
+            error_msg = f"Unable to fetch data for '{symbol}' (tried as '{normalized_symbol}'). "
+            error_msg += "This could be due to: (1) Invalid ticker symbol, (2) Market closed, (3) Delisted security, or (4) Temporary API issues. "
+            
+            # Suggest alternatives based on the symbol
+            suggestions = []
+            symbol_upper = symbol.upper()
+            
+            if "JIO" in symbol_upper:
+                suggestions.append("JIOFIN.NS")
+            elif "GOLD" in symbol_upper or symbol_upper == "XAU":
+                suggestions.append("GC=F or XAUUSD")
+            elif "SILVER" in symbol_upper or symbol_upper == "XAG":
+                suggestions.append("SI=F or XAGUSD")
+            elif "OIL" in symbol_upper:
+                suggestions.append("CL=F or XTIUSD")
+            elif len(symbol_upper) <= 5 and symbol_upper.isalpha():
+                suggestions.append(f"{symbol_upper}.NS")
+                suggestions.append(f"{symbol_upper}-USD")
+            
+            if suggestions:
+                error_msg += f"Try: {', '.join(suggestions)}"
+            else:
+                error_msg += "Examples: AAPL, BTC-USD, EURUSD, RELIANCE.NS, GC=F"
+            
+            raise HTTPException(status_code=404, detail=error_msg)
+        
+        print(f"[API] Successfully fetched {len(data)} data points")
+        
+        # Perform Analysis
+        try:
+            df = pd.DataFrame(data)
+            df = df.rename(columns={"open": "Open", "high": "High", "low": "Low", "close": "Close", "volume": "Volume"})
+            analysis_result = analyze_market_structure(df, timeframe)
+        except Exception as analysis_error:
+            print(f"[API] Analysis error: {analysis_error}")
+            # Return data without analysis if analysis fails
+            analysis_result = {
+                "error": "Analysis failed",
+                "message": str(analysis_error)
+            }
+        
+        result = {
+            "symbol": normalized_symbol,
+            "data": data,
+            "currency": get_currency_symbol(normalized_symbol),
+            "analysis": analysis_result
+        }
+        
+        # Cache the result
+        set_cache(cache_key, result)
+        print(f"[API] Cached result for {normalized_symbol}")
+        
+        return result
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        print(f"[API] Unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Server error while fetching data: {str(e)}"
+        )

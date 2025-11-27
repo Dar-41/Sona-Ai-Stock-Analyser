@@ -13,13 +13,18 @@ from functools import lru_cache
 import hashlib
 import json
 from app.analysis import analyze_market_structure
-from app.sample_data import generate_sample_data
+from app.twelvedata_client import TwelveDataClient
 
 # Simple in-memory cache with TTL
 cache_store = {}
 CACHE_TTL = 300  # 5 minutes
 
 router = APIRouter()
+
+# Initialize Twelve Data client
+# Get API key from environment or use demo
+TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY", "demo")
+td_client = TwelveDataClient(api_key=TWELVE_DATA_API_KEY)
 
 def get_cache_key(symbol: str, timeframe: str) -> str:
     """Generate cache key for market data"""
@@ -338,7 +343,7 @@ def extract_ticker_and_timeframe(text):
     return ticker, timeframe
 
 def fetch_market_data(ticker_info, period="1y", interval="1d"):
-    """Fetch market data using yfinance with robust error handling"""
+    """Fetch market data: Twelve Data API -> yfinance fallback"""
     import time
     from requests.exceptions import HTTPError, ConnectionError, Timeout
     
@@ -348,6 +353,39 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
     print(f"\n{'='*60}")
     print(f"[FETCH] Fetching data for {symbol} ({timeframe})")
     print(f"{'='*60}")
+    
+    # Try Twelve Data first (works reliably on Railway)
+    print(f"[FETCH] Strategy 1: Trying Twelve Data API...")
+    try:
+        # Clean symbol for Twelve Data
+        td_symbol = symbol
+        
+        # Handle special formats
+        if symbol.endswith(".NS") or symbol.endswith(".BO"):
+            # Indian stocks - Twelve Data uses different format
+            td_symbol = symbol.replace(".NS", "").replace(".BO", "")
+        elif "=F" in symbol:
+            # Futures - remove =F
+            td_symbol = symbol.replace("=F", "")
+        elif "=X" in symbol:
+            # Forex - Twelve Data uses / format
+            td_symbol = symbol.replace("=X", "").replace("USD", "/USD")
+        elif "^" in symbol:
+            # Indices - remove ^
+            td_symbol = symbol.replace("^", "")
+        
+        data = td_client.get_time_series(td_symbol, interval=timeframe, outputsize=100)
+        
+        if data and len(data) > 0:
+            print(f"[FETCH] ✅ Twelve Data SUCCESS! Got {len(data)} data points")
+            return data
+        else:
+            print(f"[FETCH] ❌ Twelve Data returned no data")
+    except Exception as e:
+        print(f"[FETCH] ❌ Twelve Data error: {e}")
+    
+    # Fallback to yfinance
+    print(f"[FETCH] Strategy 2: Trying yfinance...")
     
     # Map timeframe to yfinance interval
     tf_map = {

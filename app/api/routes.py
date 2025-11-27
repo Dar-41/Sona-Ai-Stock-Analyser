@@ -88,19 +88,57 @@ TICKER_MAPPINGS = {
     "NIKKEI": "^N225", "JP225": "^N225",
     "HANGSENG": "^HSI", "HK50": "^HSI",
     
-    # Indian Stocks (TradingView format)
-    "JIOFIN": "JIOFIN.NS", "JIOFINANCIAL": "JIOFIN.NS",
-    "RELIANCE": "RELIANCE.NS",
-    "TCS": "TCS.NS",
+    # Indian Stocks (TradingView format) - Comprehensive mappings
+    "JIOFIN": "JIOFIN.NS", "JIOFINANCIAL": "JIOFIN.NS", "JIO": "JIOFIN.NS",
+    "RELIANCE": "RELIANCE.NS", "RIL": "RELIANCE.NS",
+    "TCS": "TCS.NS", "TATA": "TCS.NS",
     "INFY": "INFY.NS", "INFOSYS": "INFY.NS",
-    "HDFCBANK": "HDFCBANK.NS",
-    "ICICIBANK": "ICICIBANK.NS",
+    "HDFCBANK": "HDFCBANK.NS", "HDFC": "HDFCBANK.NS",
+    "ICICIBANK": "ICICIBANK.NS", "ICICI": "ICICIBANK.NS",
     "SBIN": "SBIN.NS", "SBI": "SBIN.NS",
     "BHARTIARTL": "BHARTIARTL.NS", "AIRTEL": "BHARTIARTL.NS",
     "ITC": "ITC.NS",
     "HINDUNILVR": "HINDUNILVR.NS", "HUL": "HINDUNILVR.NS",
     "LT": "LT.NS", "LARSENTOUBRO": "LT.NS",
     "ADANIENT": "ADANIENT.NS", "ADANI": "ADANIENT.NS",
+    "ADANIPORTS": "ADANIPORTS.NS",
+    "ADANIGREEN": "ADANIGREEN.NS",
+    "TATAMOTORS": "TATAMOTORS.NS", "TAMO": "TATAMOTORS.NS",
+    "TATASTEEL": "TATASTEEL.NS",
+    "WIPRO": "WIPRO.NS",
+    "HCLTECH": "HCLTECH.NS", "HCL": "HCLTECH.NS",
+    "TECHM": "TECHM.NS",
+    "MARUTI": "MARUTI.NS",
+    "BAJFINANCE": "BAJFINANCE.NS", "BAJAJFIN": "BAJFINANCE.NS",
+    "BAJAJFINSV": "BAJAJFINSV.NS",
+    "KOTAKBANK": "KOTAKBANK.NS", "KOTAK": "KOTAKBANK.NS",
+    "AXISBANK": "AXISBANK.NS", "AXIS": "AXISBANK.NS",
+    "INDUSINDBK": "INDUSINDBK.NS", "INDUSIND": "INDUSINDBK.NS",
+    "ONGC": "ONGC.NS",
+    "BPCL": "BPCL.NS",
+    "IOC": "IOC.NS",
+    "NTPC": "NTPC.NS",
+    "POWERGRID": "POWERGRID.NS",
+    "COALINDIA": "COALINDIA.NS", "COAL": "COALINDIA.NS",
+    "SUNPHARMA": "SUNPHARMA.NS",
+    "DRREDDY": "DRREDDY.NS",
+    "CIPLA": "CIPLA.NS",
+    "DIVISLAB": "DIVISLAB.NS",
+    "APOLLOHOSP": "APOLLOHOSP.NS", "APOLLO": "APOLLOHOSP.NS",
+    "NESTLEIND": "NESTLEIND.NS", "NESTLE": "NESTLEIND.NS",
+    "BRITANNIA": "BRITANNIA.NS",
+    "DABUR": "DABUR.NS",
+    "MARICO": "MARICO.NS",
+    "TITAN": "TITAN.NS",
+    "ASIANPAINT": "ASIANPAINT.NS", "ASIAN": "ASIANPAINT.NS",
+    "ULTRACEMCO": "ULTRACEMCO.NS", "ULTRA": "ULTRACEMCO.NS",
+    "GRASIM": "GRASIM.NS",
+    "HINDALCO": "HINDALCO.NS",
+    "BAJAJ-AUTO": "BAJAJ-AUTO.NS", "BAJAJAUTO": "BAJAJ-AUTO.NS",
+    "EICHERMOT": "EICHERMOT.NS", "EICHER": "EICHERMOT.NS",
+    "HEROMOTOCO": "HEROMOTOCO.NS", "HERO": "HEROMOTOCO.NS",
+    "M&M": "M&M.NS", "MAHINDRA": "M&M.NS",
+    "LTIM": "LTIM.NS",
 }
 
 def normalize_ticker(raw_ticker):
@@ -109,6 +147,9 @@ def normalize_ticker(raw_ticker):
         return None
         
     ticker = raw_ticker.upper().strip()
+    
+    # Remove common prefixes/suffixes that users might add
+    ticker = ticker.replace("STOCK:", "").replace("NSE:", "").replace("BSE:", "").strip()
     
     # Check direct mapping first (handles TradingView formats like XAUUSD, EURUSD, JIOFIN)
     if ticker in TICKER_MAPPINGS:
@@ -123,8 +164,13 @@ def normalize_ticker(raw_ticker):
     
     # Handle TradingView forex format (6 chars, all letters, no suffix)
     # e.g., EURUSD, GBPJPY -> add =X
-    if len(ticker) == 6 and ticker.isalpha() and "USD" in ticker:
-        return ticker + "=X"
+    if len(ticker) == 6 and ticker.isalpha():
+        # Check if it looks like a forex pair
+        common_currencies = ["USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD", "INR"]
+        first_three = ticker[:3]
+        last_three = ticker[3:]
+        if first_three in common_currencies or last_three in common_currencies:
+            return ticker + "=X"
     
     # Handle TradingView metal format (XAU, XAG, XPT, XPD + USD)
     # e.g., XAUUSD -> GC=F (Gold)
@@ -148,11 +194,22 @@ def normalize_ticker(raw_ticker):
     
     # Handle Indian stocks - if it looks like an Indian stock, add .NS
     # Common Indian stock patterns: all caps, 3-12 chars
-    if len(ticker) >= 3 and ticker.isalpha() and "." not in ticker:
+    if len(ticker) >= 3 and len(ticker) <= 12 and ticker.isalpha() and "." not in ticker:
         # Check if it might be an Indian stock (heuristic)
-        indian_keywords = ["JIO", "RELIANCE", "TCS", "INFY", "HDFC", "ICICI", "SBIN", "BHARTI", "ADANI"]
+        indian_keywords = ["JIO", "RELIANCE", "TCS", "INFY", "HDFC", "ICICI", "SBIN", "BHARTI", "ADANI", 
+                          "TATA", "WIPRO", "MARUTI", "BAJAJ", "AIRTEL", "COAL", "ONGC", "BPCL", "IOC",
+                          "NTPC", "POWER", "TITAN", "ASIAN", "ULTRA", "GRASIM", "HIND", "SUN", "CIPLA",
+                          "DIVI", "APOLLO", "NESTLE", "BRITANNIA", "DABUR", "MARICO", "EICHER", "HERO"]
+        
+        # Check if ticker contains any Indian keyword or is a known pattern
         if any(keyword in ticker for keyword in indian_keywords):
             return ticker + ".NS"
+        
+        # If it's a short ticker (3-5 chars) and not in US stock format, try .NS
+        # This helps with stocks like "LT", "ITC", etc.
+        if len(ticker) <= 5 and ticker not in ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA"]:
+            # Could be Indian stock, but we'll let the fetch function try alternatives
+            pass
     
     # Handle commodities futures (add =F if it looks like a commodity code)
     if len(ticker) == 2 and ticker in ["GC", "SI", "CL", "NG", "HG", "PL", "PA", "BZ"]:
@@ -162,6 +219,26 @@ def normalize_ticker(raw_ticker):
     index_codes = ["GSPC", "DJI", "IXIC", "RUT", "VIX", "NSEI", "BSESN", "FTSE", "GDAXI", "FCHI", "N225", "HSI"]
     if ticker in index_codes:
         return "^" + ticker
+    
+    # Handle common abbreviations
+    abbreviations = {
+        "GOLD": "GC=F",
+        "SILVER": "SI=F",
+        "OIL": "CL=F",
+        "CRUDE": "CL=F",
+        "BRENT": "BZ=F",
+        "GAS": "NG=F",
+        "COPPER": "HG=F",
+        "BITCOIN": "BTC-USD",
+        "ETHEREUM": "ETH-USD",
+        "NIFTY": "^NSEI",
+        "SENSEX": "^BSESN",
+        "SPX": "^GSPC",
+        "DOW": "^DJI",
+        "NASDAQ": "^IXIC",
+    }
+    if ticker in abbreviations:
+        return abbreviations[ticker]
     
     # Default: return as-is (works for US stocks like AAPL, TSLA, etc.)
     return ticker
@@ -293,27 +370,67 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
         )
         
         if df.empty:
-            # Try alternative ticker formats
+            # Try alternative ticker formats intelligently
             alternatives = []
+            original_symbol = symbol.upper()
             
-            # If it's a potential crypto without suffix, try adding -USD
-            if "-" not in symbol and "=" not in symbol and "^" not in symbol:
-                alternatives.append(f"{symbol}-USD")
-                alternatives.append(f"{symbol}.NS")  # NSE India
-                alternatives.append(f"{symbol}.BO")  # BSE India
+            # Strategy 1: If it has no suffix, try common suffixes
+            if "." not in symbol and "=" not in symbol and "^" not in symbol and "-" not in symbol:
+                # Try crypto format
+                if len(original_symbol) <= 5 and original_symbol.isalpha():
+                    alternatives.append(f"{original_symbol}-USD")
+                
+                # Try Indian exchanges
+                alternatives.append(f"{original_symbol}.NS")  # NSE India
+                alternatives.append(f"{original_symbol}.BO")  # BSE India
+                
+                # Try as futures
+                if len(original_symbol) == 2:
+                    alternatives.append(f"{original_symbol}=F")
+                
+                # Try as index
+                alternatives.append(f"^{original_symbol}")
             
+            # Strategy 2: If it's a potential forex pair without =X
+            if len(original_symbol) == 6 and original_symbol.isalpha():
+                if "=X" not in symbol:
+                    alternatives.append(f"{original_symbol}=X")
+            
+            # Strategy 3: If it ends with .NS, try .BO and vice versa
+            if symbol.endswith(".NS"):
+                alternatives.append(symbol.replace(".NS", ".BO"))
+            elif symbol.endswith(".BO"):
+                alternatives.append(symbol.replace(".BO", ".NS"))
+            
+            # Strategy 4: If it's a futures contract, try without =F
+            if symbol.endswith("=F"):
+                alternatives.append(symbol.replace("=F", ""))
+            
+            # Strategy 5: Try common ETF formats
+            if len(original_symbol) <= 4:
+                # Could be an ETF
+                alternatives.append(original_symbol)
+            
+            # Try each alternative
             for alt in alternatives:
-                df = yf.download(
-                    alt, 
-                    period=period, 
-                    interval=yf_interval, 
-                    progress=False,
-                    threads=False,
-                    timeout=10
-                )
-                if not df.empty:
-                    print(f"Found data using alternative ticker: {alt}")
-                    break
+                if alt == symbol:  # Skip if same as original
+                    continue
+                    
+                try:
+                    df = yf.download(
+                        alt, 
+                        period=period, 
+                        interval=yf_interval, 
+                        progress=False,
+                        threads=False,
+                        timeout=10
+                    )
+                    if not df.empty:
+                        print(f"✓ Found data using alternative ticker: {alt}")
+                        symbol = alt  # Update symbol to the working one
+                        break
+                except:
+                    continue
         
         if df.empty:
             return None
@@ -453,7 +570,31 @@ async def get_market_data(symbol: str, timeframe: str = "1D"):
     # Fetch fresh data
     data = fetch_market_data({"symbol": normalized_symbol, "timeframe": timeframe})
     if not data:
-        raise HTTPException(status_code=404, detail=f"No data found for {symbol}. Try: BTC-USD, GC=F, EURUSD=X, or stock symbols.")
+        # Provide helpful error message with suggestions
+        error_msg = f"No data found for '{symbol}'."
+        
+        # Suggest alternatives based on the symbol
+        suggestions = []
+        symbol_upper = symbol.upper()
+        
+        if "JIO" in symbol_upper:
+            suggestions.append("JIOFIN (Jio Financial Services)")
+        elif "GOLD" in symbol_upper or symbol_upper == "XAU":
+            suggestions.append("XAUUSD or GC=F (Gold)")
+        elif "SILVER" in symbol_upper or symbol_upper == "XAG":
+            suggestions.append("XAGUSD or SI=F (Silver)")
+        elif "OIL" in symbol_upper:
+            suggestions.append("XTIUSD or CL=F (Crude Oil)")
+        elif len(symbol_upper) <= 5 and symbol_upper.isalpha():
+            suggestions.append(f"{symbol_upper}.NS (NSE India)")
+            suggestions.append(f"{symbol_upper}-USD (Crypto)")
+        
+        if suggestions:
+            error_msg += f" Try: {', '.join(suggestions)}"
+        else:
+            error_msg += " Try: AAPL, BTC-USD, EURUSD, RELIANCE.NS, or XAUUSD"
+        
+        raise HTTPException(status_code=404, detail=error_msg)
         
     # Perform Analysis
     df = pd.DataFrame(data)

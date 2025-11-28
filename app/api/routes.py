@@ -475,13 +475,8 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
             print(f"[FETCH] Attempting to fetch {ticker} (attempt {attempt}/{max_retries})...")
             
             # Create ticker object with custom headers to avoid blocking
-            import requests
-            session = requests.Session()
-            session.headers.update({
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-            })
-            
-            ticker_obj = yf.Ticker(ticker, session=session)
+            # Create ticker object (let yfinance handle session/headers for best compatibility)
+            ticker_obj = yf.Ticker(ticker)
             
             # Use history method instead of download for better error handling
             print(f"[FETCH] Calling yfinance history for {ticker}...")

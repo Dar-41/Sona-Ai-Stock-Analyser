@@ -14,6 +14,7 @@ import hashlib
 import json
 from app.analysis import analyze_market_structure
 from app.polygon_client import PolygonClient
+from app.alphavantage_client import AlphaVantageClient
 
 # Simple in-memory cache with TTL
 cache_store = {}
@@ -24,6 +25,10 @@ router = APIRouter()
 # Initialize Polygon client (works on Vercel!)
 POLYGON_API_KEY = os.getenv("POLYGON_API_KEY", "demo")
 polygon_client = PolygonClient(api_key=POLYGON_API_KEY)
+
+# Initialize Alpha Vantage client
+ALPHA_VANTAGE_API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY", "demo")
+av_client = AlphaVantageClient(api_key=ALPHA_VANTAGE_API_KEY)
 
 def get_cache_key(symbol: str, timeframe: str) -> str:
     """Generate cache key for market data"""
@@ -392,8 +397,37 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
     else:
         print(f"[FETCH] Skipping Polygon (demo/no key), using yfinance directly...")
     
+    # Strategy 2: Alpha Vantage (if key exists)
+    if ALPHA_VANTAGE_API_KEY and ALPHA_VANTAGE_API_KEY != "demo":
+        print(f"[FETCH] Strategy 2: Trying Alpha Vantage...")
+        try:
+            # Map timeframe to Alpha Vantage interval
+            av_interval_map = {
+                "1M": "1min", "5M": "5min", "15M": "15min", 
+                "1H": "60min", "4H": "60min", # AV doesn't have 4H, use 60min
+                "1D": "daily", "1W": "weekly"
+            }
+            av_interval = av_interval_map.get(timeframe, "daily")
+            
+            # Handle crypto
+            if "BTC" in symbol or "ETH" in symbol:
+                crypto_symbol = symbol.split("-")[0] if "-" in symbol else symbol.replace("USD", "")
+                data = av_client.get_crypto_data(crypto_symbol)
+            else:
+                # Regular stock
+                clean_symbol = symbol.replace("=F", "").replace(".NS", "").replace(".BO", "")
+                data = av_client.get_stock_data(clean_symbol, interval=av_interval)
+            
+            if data and len(data) > 0:
+                print(f"[FETCH] ✅ Alpha Vantage SUCCESS! Got {len(data)} data points")
+                return data
+            else:
+                print(f"[FETCH] ❌ Alpha Vantage returned no data, trying yfinance...")
+        except Exception as e:
+            print(f"[FETCH] ❌ Alpha Vantage error: {e}, trying yfinance...")
+
     # Fallback to yfinance
-    print(f"[FETCH] Strategy 2: Trying yfinance...")
+    print(f"[FETCH] Strategy 3: Trying yfinance...")
     
     # Map timeframe to yfinance interval
     tf_map = {

@@ -13,12 +13,17 @@ from functools import lru_cache
 import hashlib
 import json
 from app.analysis import analyze_market_structure
+from app.finnhub_client import FinnhubClient
 
 # Simple in-memory cache with TTL
 cache_store = {}
 CACHE_TTL = 300  # 5 minutes
 
 router = APIRouter()
+
+# Initialize Finnhub client (works on Vercel!)
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "demo")
+fh_client = FinnhubClient(api_key=FINNHUB_API_KEY)
 
 def get_cache_key(symbol: str, timeframe: str) -> str:
     """Generate cache key for market data"""
@@ -345,8 +350,39 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
     timeframe = ticker_info.get('timeframe', '1D')
     
     print(f"\n{'='*60}")
-    print(f"[FETCH] Fetching data for {symbol} ({timeframe}) using yfinance")
+    print(f"[FETCH] Fetching data for {symbol} ({timeframe})")
     print(f"{'='*60}")
+    
+    # Try Finnhub first (works on Vercel!)
+    print(f"[FETCH] Strategy 1: Trying Finnhub API...")
+    try:
+        # Map timeframe to Finnhub resolution
+        resolution_map = {
+            "1M": "1", "5M": "5", "15M": "15",
+            "1H": "60", "4H": "60",
+            "1D": "D", "1W": "W"
+        }
+        resolution = resolution_map.get(timeframe, "D")
+        
+        # Format symbol for Finnhub
+        fh_symbol = symbol
+        if "=F" in symbol and "GC" in symbol:
+            fh_symbol = "OANDA:XAU_USD"  # Gold
+        elif "BTC" in symbol:
+            fh_symbol = "BINANCE:BTCUSDT"
+        
+        data = fh_client.get_candles(fh_symbol, resolution=resolution, days_back=365)
+        
+        if data and len(data) > 0:
+            print(f"[FETCH] ✅ Finnhub SUCCESS! Got {len(data)} data points")
+            return data
+        else:
+            print(f"[FETCH] ❌ Finnhub returned no data, trying yfinance...")
+    except Exception as e:
+        print(f"[FETCH] ❌ Finnhub error: {e}, trying yfinance...")
+    
+    # Fallback to yfinance
+    print(f"[FETCH] Strategy 2: Trying yfinance...")
     
     # Map timeframe to yfinance interval
     tf_map = {

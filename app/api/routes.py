@@ -398,7 +398,8 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
         print(f"[FETCH] Skipping Polygon (demo/no key), using yfinance directly...")
     
     # Strategy 2: Alpha Vantage (if key exists)
-    if ALPHA_VANTAGE_API_KEY and ALPHA_VANTAGE_API_KEY != "demo":
+    # Skip for XAUUSD/GC=F as per user request (force yfinance)
+    if ALPHA_VANTAGE_API_KEY and ALPHA_VANTAGE_API_KEY != "demo" and "GC=F" not in symbol and "XAU" not in symbol:
         print(f"[FETCH] Strategy 2: Trying Alpha Vantage...")
         try:
             # Map timeframe to Alpha Vantage interval

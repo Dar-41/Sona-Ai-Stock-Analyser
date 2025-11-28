@@ -18,7 +18,7 @@ from app.alphavantage_client import AlphaVantageClient
 
 # Simple in-memory cache with TTL
 cache_store = {}
-CACHE_TTL = 300 # 5 minutes
+CACHE_TTL = 60 # 1 minute
 
 router = APIRouter()
 

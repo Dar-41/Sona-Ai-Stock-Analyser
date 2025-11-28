@@ -430,6 +430,30 @@ const App = () => {
         handleManualSearch({ preventDefault: () => { } });
     }, []);
 
+    // Auto-refresh data every 60 seconds
+    useEffect(() => {
+        if (!ticker) return;
+
+        const intervalId = setInterval(async () => {
+            console.log(`[Auto-Refresh] Fetching update for ${ticker}...`);
+            try {
+                const response = await fetch(`/api/market/${ticker}?timeframe=${timeframe}`);
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.data) {
+                        setMarketData(result.data);
+                        setAnalysis(result.analysis);
+                        // Don't update status or loading state to avoid disruption
+                    }
+                }
+            } catch (error) {
+                console.error('Auto-refresh failed:', error);
+            }
+        }, 60000); // 60 seconds
+
+        return () => clearInterval(intervalId);
+    }, [ticker, timeframe]);
+
     // Risk Calculation
     const currentPrice = marketData ? marketData[marketData.length - 1].close : 0;
     const riskAmount = accountBalance * (riskPercent / 100);

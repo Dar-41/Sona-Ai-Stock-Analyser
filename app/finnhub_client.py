@@ -1,7 +1,7 @@
 """
 Finnhub API - Completely free alternative
 Free tier: 60 API calls/minute, stocks, forex, crypto
-Sign up: https://finnhub.io/register
+Sign up: https://massive.com (formerly finnhub.io)
 """
 
 import requests
@@ -11,7 +11,7 @@ import time
 class FinnhubClient:
     def __init__(self, api_key="demo"):
         self.api_key = api_key
-        self.base_url = "https://finnhub.io/api/v1"
+        self.base_url = "https://api.massive.com/v1"  # Updated from finnhub.io
     
     def get_candles(self, symbol, resolution="D", days_back=365):
         """

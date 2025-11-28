@@ -13,17 +13,17 @@ from functools import lru_cache
 import hashlib
 import json
 from app.analysis import analyze_market_structure
-from app.finnhub_client import FinnhubClient
+from app.polygon_client import PolygonClient
 
 # Simple in-memory cache with TTL
 cache_store = {}
-CACHE_TTL = 300  # 5 minutes
+CACHE_TTL = 300 # 5 minutes
 
 router = APIRouter()
 
-# Initialize Finnhub client (works on Vercel!)
-FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "demo")
-fh_client = FinnhubClient(api_key=FINNHUB_API_KEY)
+# Initialize Polygon client (works on Vercel!)
+POLYGON_API_KEY = os.getenv("POLYGON_API_KEY", "demo")
+polygon_client = PolygonClient(api_key=POLYGON_API_KEY)
 
 def get_cache_key(symbol: str, timeframe: str) -> str:
     """Generate cache key for market data"""
@@ -353,33 +353,38 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
     print(f"[FETCH] Fetching data for {symbol} ({timeframe})")
     print(f"{'='*60}")
     
-    # Try Finnhub first (works on Vercel!)
-    print(f"[FETCH] Strategy 1: Trying Finnhub API...")
+    # Try Polygon first (works on Vercel!)
+    print(f"[FETCH] Strategy 1: Trying Polygon API...")
     try:
-        # Map timeframe to Finnhub resolution
-        resolution_map = {
-            "1M": "1", "5M": "5", "15M": "15",
-            "1H": "60", "4H": "60",
-            "1D": "D", "1W": "W"
+        # Map timeframe to Polygon timespan
+        timespan_map = {
+            "1M": "minute",
+            "5M": "minute",
+            "15M": "minute",
+            "1H": "hour",
+            "4H": "hour",
+            "1D": "day",
+            "1W": "week"
         }
-        resolution = resolution_map.get(timeframe, "D")
+        timespan = timespan_map.get(timeframe, "day")
         
-        # Format symbol for Finnhub
-        fh_symbol = symbol
-        if "=F" in symbol and "GC" in symbol:
-            fh_symbol = "OANDA:XAU_USD"  # Gold
-        elif "BTC" in symbol:
-            fh_symbol = "BINANCE:BTCUSDT"
-        
-        data = fh_client.get_candles(fh_symbol, resolution=resolution, days_back=365)
+        # Handle different symbol types
+        if "BTC" in symbol or "ETH" in symbol:
+            # Crypto
+            crypto_symbol = symbol.split("-")[0] if "-" in symbol else symbol.replace("USD", "")
+            data = polygon_client.get_crypto_aggregates(crypto_symbol, "USD", timespan=timespan)
+        else:
+            # Regular stock (clean symbol)
+            clean_symbol = symbol.replace("=F", "").replace(".NS", "").replace(".BO", "")
+            data = polygon_client.get_aggregates(clean_symbol, timespan=timespan)
         
         if data and len(data) > 0:
-            print(f"[FETCH] ✅ Finnhub SUCCESS! Got {len(data)} data points")
+            print(f"[FETCH] ✅ Polygon SUCCESS! Got {len(data)} data points")
             return data
         else:
-            print(f"[FETCH] ❌ Finnhub returned no data, trying yfinance...")
+            print(f"[FETCH] ❌ Polygon returned no data, trying yfinance...")
     except Exception as e:
-        print(f"[FETCH] ❌ Finnhub error: {e}, trying yfinance...")
+        print(f"[FETCH] ❌ Polygon error: {e}, trying yfinance...")
     
     # Fallback to yfinance
     print(f"[FETCH] Strategy 2: Trying yfinance...")

@@ -13,18 +13,12 @@ from functools import lru_cache
 import hashlib
 import json
 from app.analysis import analyze_market_structure
-from app.finnhub_client import FinnhubClient
 
 # Simple in-memory cache with TTL
 cache_store = {}
 CACHE_TTL = 300  # 5 minutes
 
 router = APIRouter()
-
-# Initialize Finnhub client
-# Get API key from environment or use demo
-FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "demo")
-fh_client = FinnhubClient(api_key=FINNHUB_API_KEY)
 
 def get_cache_key(symbol: str, timeframe: str) -> str:
     """Generate cache key for market data"""
@@ -351,62 +345,8 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
     timeframe = ticker_info.get('timeframe', '1D')
     
     print(f"\n{'='*60}")
-    print(f"[FETCH] Fetching data for {symbol} ({timeframe})")
+    print(f"[FETCH] Fetching data for {symbol} ({timeframe}) using yfinance")
     print(f"{'='*60}")
-    
-    # Try Finnhub first (free tier supports stocks, forex, crypto)
-    print(f"[FETCH] Strategy 1: Trying Finnhub API...")
-    try:
-        # Map timeframe to Finnhub resolution
-        resolution_map = {
-            "1M": "1",
-            "5M": "5",
-            "15M": "15",
-            "1H": "60",
-            "4H": "60",  # Will use 60min
-            "1D": "D",
-            "1W": "W"
-        }
-        resolution = resolution_map.get(timeframe, "D")
-        
-        # Format symbol for Finnhub
-        fh_symbol = symbol
-        
-        # Handle special formats
-        if symbol.endswith(".NS") or symbol.endswith(".BO"):
-            # Indian stocks - keep as is for now
-            fh_symbol = symbol
-        elif "=F" in symbol:
-            # Commodities - Finnhub uses different format
-            # GC=F (Gold) -> OANDA:XAU_USD
-            if "GC" in symbol:
-                fh_symbol = "OANDA:XAU_USD"
-            elif "SI" in symbol:
-                fh_symbol = "OANDA:XAG_USD"
-            else:
-                fh_symbol = symbol.replace("=F", "")
-        elif "BTC" in symbol or "ETH" in symbol:
-            # Crypto - use Binance format
-            crypto = symbol.split("-")[0] if "-" in symbol else symbol.replace("USD", "")
-            fh_symbol = f"BINANCE:{crypto}USDT"
-        elif "/" in symbol or "USD" in symbol:
-            # Forex - use OANDA format
-            if "/" not in symbol:
-                symbol = symbol.replace("USD", "/USD")
-            fh_symbol = f"OANDA:{symbol.replace('/', '_')}"
-        
-        data = fh_client.get_candles(fh_symbol, resolution=resolution, days_back=365)
-        
-        if data and len(data) > 0:
-            print(f"[FETCH] ✅ Finnhub SUCCESS! Got {len(data)} data points")
-            return data
-        else:
-            print(f"[FETCH] ❌ Finnhub returned no data")
-    except Exception as e:
-        print(f"[FETCH] ❌ Finnhub error: {e}")
-    
-    # Fallback to yfinance
-    print(f"[FETCH] Strategy 2: Trying yfinance...")
     
     # Map timeframe to yfinance interval
     tf_map = {

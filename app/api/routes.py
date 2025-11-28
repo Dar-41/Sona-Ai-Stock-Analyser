@@ -367,8 +367,8 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
     period = period_map.get(yf_interval, "1y")
     
     # Retry configuration
-    max_retries = 5  # Increased from 3 for Railway reliability
-    retry_delay = 2  # Increased delay between retries
+    max_retries = 3  # Reduced for faster response
+    retry_delay = 1  # Reduced delay between retries
     
     def try_download(ticker, attempt=1):
         """Try to download data with retry logic"""
@@ -390,7 +390,7 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
                 period=period,
                 interval=yf_interval,
                 auto_adjust=True,
-                timeout=60  # Increased from 30 for Railway
+                timeout=20  # Reduced for faster response on Render
             )
             
             if df.empty:

@@ -4,8 +4,8 @@ const { createChart } = LightweightCharts;
 
 const App = () => {
     const [status, setStatus] = useState('System Ready');
-    const [ticker, setTicker] = useState('XAUUSD');
-    const [timeframe, setTimeframe] = useState('5M');
+    const [ticker, setTicker] = useState('');
+    const [timeframe, setTimeframe] = useState('1D');
     const [marketData, setMarketData] = useState(null);
     const [analysis, setAnalysis] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -425,10 +425,10 @@ const App = () => {
         }
     };
 
-    // Auto-load default ticker on mount
-    useEffect(() => {
-        handleManualSearch({ preventDefault: () => { } });
-    }, []);
+    // Auto-load default ticker on mount - REMOVED per user request
+    // useEffect(() => {
+    //     handleManualSearch({ preventDefault: () => { } });
+    // }, []);
 
     // Auto-refresh data every 60 seconds
     useEffect(() => {

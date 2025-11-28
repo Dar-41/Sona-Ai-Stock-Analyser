@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: sona-ai-stock-analyser
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: FINNHUB_API_KEY
+        sync: false
+    healthCheckPath: /api/health

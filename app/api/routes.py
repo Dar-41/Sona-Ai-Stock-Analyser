@@ -342,7 +342,7 @@ def extract_ticker_and_timeframe(text):
     return ticker, timeframe
 
 def fetch_market_data(ticker_info, period="1y", interval="1d"):
-    """Fetch market data: Twelve Data API -> yfinance fallback"""
+    """Fetch market data: yfinance primary, Polygon fallback (if valid key exists)"""
     import time
     from requests.exceptions import HTTPError, ConnectionError, Timeout
     
@@ -353,38 +353,44 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
     print(f"[FETCH] Fetching data for {symbol} ({timeframe})")
     print(f"{'='*60}")
     
-    # Try Polygon first (works on Vercel!)
-    print(f"[FETCH] Strategy 1: Trying Polygon API...")
-    try:
-        # Map timeframe to Polygon timespan
-        timespan_map = {
-            "1M": "minute",
-            "5M": "minute",
-            "15M": "minute",
-            "1H": "hour",
-            "4H": "hour",
-            "1D": "day",
-            "1W": "week"
-        }
-        timespan = timespan_map.get(timeframe, "day")
-        
-        # Handle different symbol types
-        if "BTC" in symbol or "ETH" in symbol:
-            # Crypto
-            crypto_symbol = symbol.split("-")[0] if "-" in symbol else symbol.replace("USD", "")
-            data = polygon_client.get_crypto_aggregates(crypto_symbol, "USD", timespan=timespan)
-        else:
-            # Regular stock (clean symbol)
-            clean_symbol = symbol.replace("=F", "").replace(".NS", "").replace(".BO", "")
-            data = polygon_client.get_aggregates(clean_symbol, timespan=timespan)
-        
-        if data and len(data) > 0:
-            print(f"[FETCH] ✅ Polygon SUCCESS! Got {len(data)} data points")
-            return data
-        else:
-            print(f"[FETCH] ❌ Polygon returned no data, trying yfinance...")
-    except Exception as e:
-        print(f"[FETCH] ❌ Polygon error: {e}, trying yfinance...")
+    # Check if we have a valid Polygon API key (not demo)
+    has_valid_polygon_key = POLYGON_API_KEY and POLYGON_API_KEY != "demo"
+    
+    # Strategy 1: Try Polygon ONLY if we have a valid API key
+    if has_valid_polygon_key:
+        print(f"[FETCH] Strategy 1: Trying Polygon API (valid key detected)...")
+        try:
+            # Map timeframe to Polygon timespan
+            timespan_map = {
+                "1M": "minute",
+                "5M": "minute",
+                "15M": "minute",
+                "1H": "hour",
+                "4H": "hour",
+                "1D": "day",
+                "1W": "week"
+            }
+            timespan = timespan_map.get(timeframe, "day")
+            
+            # Handle different symbol types
+            if "BTC" in symbol or "ETH" in symbol:
+                # Crypto
+                crypto_symbol = symbol.split("-")[0] if "-" in symbol else symbol.replace("USD", "")
+                data = polygon_client.get_crypto_aggregates(crypto_symbol, "USD", timespan=timespan)
+            else:
+                # Regular stock (clean symbol)
+                clean_symbol = symbol.replace("=F", "").replace(".NS", "").replace(".BO", "")
+                data = polygon_client.get_aggregates(clean_symbol, timespan=timespan)
+            
+            if data and len(data) > 0:
+                print(f"[FETCH] ✅ Polygon SUCCESS! Got {len(data)} data points")
+                return data
+            else:
+                print(f"[FETCH] ❌ Polygon returned no data, trying yfinance...")
+        except Exception as e:
+            print(f"[FETCH] ❌ Polygon error: {e}, trying yfinance...")
+    else:
+        print(f"[FETCH] Skipping Polygon (demo/no key), using yfinance directly...")
     
     # Fallback to yfinance
     print(f"[FETCH] Strategy 2: Trying yfinance...")
@@ -408,8 +414,8 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
     period = period_map.get(yf_interval, "1y")
     
     # Retry configuration
-    max_retries = 3  # Reduced for faster response
-    retry_delay = 1  # Reduced delay between retries
+    max_retries = 2  # Reduced for faster response on Vercel
+    retry_delay = 1  # Quick retry
     
     def try_download(ticker, attempt=1):
         """Try to download data with retry logic"""
@@ -431,7 +437,7 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
                 period=period,
                 interval=yf_interval,
                 auto_adjust=True,
-                timeout=20  # Reduced for faster response on Render
+                timeout=30  # Increased timeout for Vercel serverless
             )
             
             if df.empty:

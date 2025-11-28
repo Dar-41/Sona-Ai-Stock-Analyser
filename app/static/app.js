@@ -4,8 +4,8 @@ const { createChart } = LightweightCharts;
 
 const App = () => {
     const [status, setStatus] = useState('System Ready');
-    const [ticker, setTicker] = useState('');
-    const [timeframe, setTimeframe] = useState('1D');
+    const [ticker, setTicker] = useState('XAUUSD');
+    const [timeframe, setTimeframe] = useState('5M');
     const [marketData, setMarketData] = useState(null);
     const [analysis, setAnalysis] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -424,6 +424,11 @@ const App = () => {
             }
         }
     };
+
+    // Auto-load default ticker on mount
+    useEffect(() => {
+        handleManualSearch({ preventDefault: () => { } });
+    }, []);
 
     // Risk Calculation
     const currentPrice = marketData ? marketData[marketData.length - 1].close : 0;

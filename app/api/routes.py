@@ -599,6 +599,13 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
                 print(f"Missing column {col} in data for {symbol}")
                 return None
         
+        # Drop rows with NaN values in critical columns
+        df = df.dropna(subset=['Open', 'High', 'Low', 'Close'])
+        
+        if df.empty:
+            print(f"[FETCH] ❌ DataFrame empty after dropping NaNs for {symbol}")
+            return None
+        
         # Format data for frontend
         data = []
         for _, row in df.iterrows():
@@ -706,7 +713,8 @@ async def analyze_chart(file: UploadFile = File(...)):
                 "data": market_data,
                 "current_price": market_data[-1]['close'] if market_data else 0,
                 "currency": get_currency_symbol(ticker_symbol),
-                "analysis": analysis_result
+                "analysis": analysis_result,
+                "data_source": "yfinance" # Default, could be refined if we tracked it
             }
             
         except Exception as data_error:

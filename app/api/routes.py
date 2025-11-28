@@ -602,8 +602,16 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
         # Drop rows with NaN values in critical columns
         df = df.dropna(subset=['Open', 'High', 'Low', 'Close'])
         
+        # Drop rows with zero or negative prices
+        df = df[df['Close'] > 0]
+        
         if df.empty:
-            print(f"[FETCH] ❌ DataFrame empty after dropping NaNs for {symbol}")
+            print(f"[FETCH] ❌ DataFrame empty after filtering valid prices for {symbol}")
+            return None
+            
+        # Sanity check for BTC
+        if "BTC" in symbol and df['Close'].iloc[-1] < 100:
+            print(f"[FETCH] ❌ Sanity check failed for BTC: Price {df['Close'].iloc[-1]} is too low")
             return None
         
         # Format data for frontend

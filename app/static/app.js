@@ -478,6 +478,11 @@ const App = () => {
                     <div className="dark-card px-3 py-2 rounded-full flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-400 pulse' : 'bg-green-400 pulse'}`}></div>
                         <span className="text-xs text-slate-300 font-medium">{status}</span>
+                        {marketData && (
+                            <span className="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
+                                {analysis?.data_source || 'Live'}
+                            </span>
+                        )}
                     </div>
                 </div>
             </header>

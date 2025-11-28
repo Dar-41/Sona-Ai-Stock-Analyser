@@ -413,6 +413,23 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
             if "BTC" in symbol or "ETH" in symbol:
                 crypto_symbol = symbol.split("-")[0] if "-" in symbol else symbol.replace("USD", "")
                 data = av_client.get_crypto_data(crypto_symbol)
+            # Handle Metals & Forex (mapped from yfinance format)
+            elif "GC=F" in symbol or "XAU" in symbol:
+                data = av_client.get_forex_data("XAU", "USD", interval=av_interval)
+            elif "SI=F" in symbol or "XAG" in symbol:
+                data = av_client.get_forex_data("XAG", "USD", interval=av_interval)
+            elif "EURUSD" in symbol or "EUR=X" in symbol:
+                data = av_client.get_forex_data("EUR", "USD", interval=av_interval)
+            elif "GBPUSD" in symbol or "GBP=X" in symbol:
+                data = av_client.get_forex_data("GBP", "USD", interval=av_interval)
+            elif "=X" in symbol:
+                # Generic Forex handler (e.g. JPY=X -> JPY/USD is wrong, usually USDJPY=X -> USD/JPY)
+                # yfinance format: EURUSD=X -> EUR/USD
+                # Alpha Vantage format: from_symbol=EUR, to_symbol=USD
+                base_currency = symbol.replace("=X", "")[:3]
+                quote_currency = symbol.replace("=X", "")[3:]
+                if not quote_currency: quote_currency = "USD" # Default fallback
+                data = av_client.get_forex_data(base_currency, quote_currency, interval=av_interval)
             else:
                 # Regular stock
                 clean_symbol = symbol.replace("=F", "").replace(".NS", "").replace(".BO", "")

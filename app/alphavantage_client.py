@@ -171,3 +171,97 @@ class AlphaVantageClient:
         except Exception as e:
             print(f"[ALPHAVANTAGE] Error: {e}")
             return None
+    def get_forex_data(self, from_symbol, to_symbol="USD", interval="daily", outputsize="compact"):
+        """
+        Fetch Forex/Metal data (e.g., EUR/USD, XAU/USD)
+        
+        Args:
+            from_symbol: Base currency (e.g., 'EUR', 'XAU')
+            to_symbol: Quote currency (e.g., 'USD')
+            interval: '1min', '5min', '15min', '30min', '60min', 'daily', 'weekly', 'monthly'
+        """
+        print(f"[ALPHAVANTAGE] Fetching forex {from_symbol}/{to_symbol} with interval {interval}")
+        
+        # Determine function based on interval
+        if interval in ['1min', '5min', '15min', '30min', '60min']:
+            function = "FX_INTRADAY"
+            params = {
+                "function": function,
+                "from_symbol": from_symbol,
+                "to_symbol": to_symbol,
+                "interval": interval,
+                "apikey": self.api_key,
+                "outputsize": outputsize
+            }
+        elif interval == "daily":
+            function = "FX_DAILY"
+            params = {
+                "function": function,
+                "from_symbol": from_symbol,
+                "to_symbol": to_symbol,
+                "apikey": self.api_key,
+                "outputsize": outputsize
+            }
+        elif interval == "weekly":
+            function = "FX_WEEKLY"
+            params = {
+                "function": function,
+                "from_symbol": from_symbol,
+                "to_symbol": to_symbol,
+                "apikey": self.api_key
+            }
+        elif interval == "monthly":
+            function = "FX_MONTHLY"
+            params = {
+                "function": function,
+                "from_symbol": from_symbol,
+                "to_symbol": to_symbol,
+                "apikey": self.api_key
+            }
+        else:
+            print(f"[ALPHAVANTAGE] Invalid interval: {interval}")
+            return None
+            
+        try:
+            response = requests.get(self.base_url, params=params, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            
+            if "Error Message" in data or "Note" in data:
+                print(f"[ALPHAVANTAGE] Error or rate limit")
+                return None
+            
+            # Find time series key (it varies by function)
+            time_series_key = None
+            for key in data.keys():
+                if "Time Series" in key:
+                    time_series_key = key
+                    break
+            
+            if not time_series_key:
+                return None
+            
+            time_series = data[time_series_key]
+            
+            formatted_data = []
+            for timestamp, values in time_series.items():
+                try:
+                    dt = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S") if " " in timestamp else datetime.strptime(timestamp, "%Y-%m-%d")
+                    formatted_data.append({
+                        "time": int(dt.timestamp()),
+                        "open": float(values.get("1. open", 0)),
+                        "high": float(values.get("2. high", 0)),
+                        "low": float(values.get("3. low", 0)),
+                        "close": float(values.get("4. close", 0)),
+                        "volume": 0 # Forex often doesn't have volume in AV
+                    })
+                except Exception as e:
+                    continue
+            
+            formatted_data.sort(key=lambda x: x["time"])
+            print(f"[ALPHAVANTAGE] ✅ Successfully fetched {len(formatted_data)} forex data points")
+            return formatted_data
+            
+        except Exception as e:
+            print(f"[ALPHAVANTAGE] Error: {e}")
+            return None

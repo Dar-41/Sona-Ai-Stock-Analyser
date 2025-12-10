@@ -23,64 +23,6 @@ const App = () => {
     const chartContainerRef = useRef(null);
     const chartInstanceRef = useRef(null);
     const searchRef = useRef(null);
-    const vantaRef = useRef(null);
-    const vantaEffect = useRef(null);
-
-    // Initialize Animations
-    useEffect(() => {
-        // Initialize AOS
-        if (window.AOS) {
-            window.AOS.init({
-                duration: 800,
-                once: true,
-                easing: 'ease-out-cubic',
-                offset: 30,
-            });
-        }
-
-        // Initialize Vanta
-        const initVanta = () => {
-            if (!vantaEffect.current && window.VANTA && vantaRef.current) {
-                try {
-                    vantaEffect.current = window.VANTA.NET({
-                        el: vantaRef.current,
-                        mouseControls: true,
-                        touchControls: true,
-                        gyroControls: false,
-                        minHeight: 200.00,
-                        minWidth: 200.00,
-                        scale: 1.00,
-                        scaleMobile: 1.00,
-                        color: theme === 'dark' ? 0x8b5cf6 : 0x6366f1,
-                        backgroundColor: theme === 'dark' ? 0x0f172a : 0xf1f5f9,
-                        points: 10.00,
-                        maxDistance: 20.00,
-                        spacing: 16.00,
-                        showDots: true
-                    });
-                } catch (e) {
-                    console.log("Vanta init error:", e);
-                }
-            }
-        };
-
-        // Small delay to ensure DOM is ready
-        setTimeout(initVanta, 100);
-
-        return () => {
-            if (vantaEffect.current) vantaEffect.current.destroy();
-        };
-    }, []);
-
-    // Update Vanta on theme change
-    useEffect(() => {
-        if (vantaEffect.current) {
-            vantaEffect.current.setOptions({
-                color: theme === 'dark' ? 0x8b5cf6 : 0x6366f1,
-                backgroundColor: theme === 'dark' ? 0x0f172a : 0xf1f5f9
-            });
-        }
-    }, [theme]);
 
     // Popular symbols organized by category
     const popularSymbols = [
@@ -530,538 +472,481 @@ const App = () => {
     const positionValue = positionSize * currentPrice;
 
     return (
-        <div className="min-h-screen relative overflow-x-hidden">
-            {/* Vanta Background */}
-            <div ref={vantaRef} className="fixed inset-0 z-0 pointer-events-none opacity-50"></div>
-
-            <div className="relative z-10 px-4 py-6 max-w-7xl mx-auto">
-                {/* Header */}
-                <header className="flex justify-between items-center mb-6" data-aos="fade-down">
-                    <div className="flex items-center gap-3">
-                        <img src="/static/logo.png?v=4" alt="Sona AI" className="w-12 h-12 object-contain" />
-                        <div>
-                            <h1 className="text-xl font-bold text-primary">
-                                Sona AI
-                            </h1>
-                            <p className="text-xs text-slate-500 font-medium">Stock Analyser</p>
-                        </div>
+        <div className="min-h-screen px-4 py-6 max-w-7xl mx-auto">
+            {/* Header */}
+            <header className="flex justify-between items-center mb-6 fade-in-up">
+                <div className="flex items-center gap-3">
+                    <img src="/static/logo.png?v=4" alt="Sona AI" className="w-12 h-12 object-contain" />
+                    <div>
+                        <h1 className="text-xl font-bold text-primary">
+                            Sona AI
+                        </h1>
+                        <p className="text-xs text-slate-500 font-medium">Stock Analyser</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <div className="dark-card px-3 py-2 rounded-full flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-400 pulse' : 'bg-green-400 pulse'}`}></div>
-                            <span className="text-xs text-secondary font-medium">{status}</span>
-                            {marketData && (
-                                <span className="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
-                                    {analysis?.data_source || 'Live'}
-                                </span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="dark-card px-3 py-2 rounded-full flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-400 pulse' : 'bg-green-400 pulse'}`}></div>
+                        <span className="text-xs text-secondary font-medium">{status}</span>
+                        {marketData && (
+                            <span className="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
+                                {analysis?.data_source || 'Live'}
+                            </span>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                        className="p-2 rounded-full hover:bg-slate-500/10 transition-colors"
+                        title="Toggle Theme"
+                    >
+                        <i data-lucide={theme === 'dark' ? 'sun' : 'moon'} className="w-5 h-5 text-secondary"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+                {/* Left Panel */}
+                <div className="lg:col-span-4 space-y-4">
+                    {/* Search Card */}
+                    <div className="glass-card rounded-3xl p-5 fade-in-up">
+                        <h3 className="text-xs font-bold mb-4 text-secondary uppercase tracking-wider">Search Symbol</h3>
+
+                        <div ref={searchRef} className="relative mb-4">
+                            <form onSubmit={handleManualSearch} className="relative">
+                                <input
+                                    type="text"
+                                    value={ticker}
+                                    onChange={handleSearchInput}
+                                    onFocus={() => setShowSuggestions(true)}
+                                    placeholder="Search stocks, crypto, forex..."
+                                    className="w-full input-modern rounded-2xl pl-11 pr-4 py-3 text-sm focus:outline-none text-primary placeholder-slate-600 font-medium"
+                                    autoComplete="off"
+                                />
+                                <i data-lucide="search" className="w-5 h-5 text-secondary absolute left-3 top-3"></i>
+                            </form>
+
+                            {/* Suggestions Dropdown */}
+                            {showSuggestions && filteredSuggestions.length > 0 && (
+                                <div className="absolute z-50 w-full mt-2 glass-card rounded-2xl shadow-2xl max-h-80 overflow-hidden slide-in">
+                                    <div className="overflow-y-auto max-h-80">
+                                        {filteredSuggestions.map((item, idx) => (
+                                            <div
+                                                key={idx}
+                                                onClick={() => handleSelectSuggestion(item.symbol)}
+                                                className="flex items-center gap-3 px-4 py-3 hover:bg-purple-500/10 cursor-pointer transition-colors border-b border-border last:border-0"
+                                            >
+                                                <span className="text-xl">{item.icon}</span>
+                                                <div className="flex-1">
+                                                    <div className="text-primary font-semibold text-sm">{item.symbol}</div>
+                                                    <div className="text-slate-500 text-xs">{item.name}</div>
+                                                </div>
+                                                <span className="text-xs text-purple-400 font-bold">{item.category}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             )}
                         </div>
-                        <button
-                            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                            className="p-2 rounded-full hover:bg-slate-500/10 transition-colors"
-                            title="Toggle Theme"
-                        >
-                            <i data-lucide={theme === 'dark' ? 'sun' : 'moon'} className="w-5 h-5 text-secondary"></i>
-                        </button>
-                </header>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        {/* Timeframe Selector */}
+                        <div>
+                            <label className="block text-xs text-slate-500 mb-3 uppercase tracking-wider font-bold">Timeframe</label>
+                            <div className="grid grid-cols-4 gap-2">
+                                {['1M', '5M', '15M', '1H', '4H', '1D', '1W'].map(tf => (
+                                    <button
+                                        key={tf}
+                                        onClick={() => handleTimeframeChange(tf)}
+                                        className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${timeframe === tf
+                                            ? 'btn-purple text-white'
+                                            : 'btn-dark text-secondary hover:text-primary'
+                                            }`}
+                                    >
+                                        {tf}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
 
-                    {/* Left Panel */}
-                    <div className="lg:col-span-4 space-y-4">
-                        {/* Search Card */}
-                        <div
-                            className="glass-card rounded-3xl p-5"
-                            data-aos="fade-right"
-                            data-aos-delay="100"
-                            data-tilt
-                            data-tilt-max="2"
-                            data-tilt-speed="400"
-                            data-tilt-glare
-                            data-tilt-max-glare="0.1"
-                        >
-                            <h3 className="text-xs font-bold mb-4 text-secondary uppercase tracking-wider">Search Symbol</h3>
-
-                            <div ref={searchRef} className="relative mb-4">
-                                <form onSubmit={handleManualSearch} className="relative">
-                                    <input
-                                        type="text"
-                                        value={ticker}
-                                        onChange={handleSearchInput}
-                                        onFocus={() => setShowSuggestions(true)}
-                                        placeholder="Search stocks, crypto, forex..."
-                                        className="w-full input-modern rounded-2xl pl-11 pr-4 py-3 text-sm focus:outline-none text-primary placeholder-slate-600 font-medium"
-                                        autoComplete="off"
-                                    />
-                                    <i data-lucide="search" className="w-5 h-5 text-secondary absolute left-3 top-3"></i>
-                                </form>
-
-                                {/* Suggestions Dropdown */}
-                                {showSuggestions && filteredSuggestions.length > 0 && (
-                                    <div className="absolute z-50 w-full mt-2 glass-card rounded-2xl shadow-2xl max-h-80 overflow-hidden slide-in">
-                                        <div className="overflow-y-auto max-h-80">
-                                            {filteredSuggestions.map((item, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    onClick={() => handleSelectSuggestion(item.symbol)}
-                                                    className="flex items-center gap-3 px-4 py-3 hover:bg-slate-500/10 cursor-pointer transition-colors border-b border-border last:border-0"
-                                                >
-                                                    <span className="text-xl">{item.icon}</span>
-                                                    <div className="flex-1">
-                                                        <div className="text-primary font-semibold text-sm">{item.symbol}</div>
-                                                        <div className="text-secondary text-xs">{item.name}</div>
-                                                    </div>
-                                                    <span className="text-xs text-purple-400 font-bold">{item.category}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                    {/* Welcome Dashboard - Show when no data */}
+                    {!marketData && (
+                        <div className="glass-card rounded-3xl p-6 fade-in-up" style={{ animationDelay: '0.1s' }}>
+                            <div className="text-center mb-6">
+                                <h2 className="text-2xl font-black text-primary mb-2">Welcome to Sona AI</h2>
+                                <p className="text-secondary text-sm">Advanced Stock Analysis with Smart Money Concepts</p>
                             </div>
 
-                            {/* Timeframe Selector */}
-                            <div>
-                                <label className="block text-xs text-slate-500 mb-3 uppercase tracking-wider font-bold">Timeframe</label>
-                                <div className="grid grid-cols-4 gap-2">
-                                    {['1M', '5M', '15M', '1H', '4H', '1D', '1W'].map(tf => (
+                            {/* Features Grid */}
+                            <div className="grid grid-cols-2 gap-3 mb-6">
+                                <div className="dark-card rounded-2xl p-4">
+                                    <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
+                                        <i data-lucide="trending-up" className="w-5 h-5" style={{ color: 'white' }}></i>
+                                    </div>
+                                    <h3 className="text-sm font-bold text-primary mb-1">Smart Signals</h3>
+                                    <p className="text-xs text-slate-500">AI-powered BUY/SELL signals</p>
+                                </div>
+                                <div className="dark-card rounded-2xl p-4">
+                                    <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
+                                        <i data-lucide="moon" className="w-5 h-5" style={{ color: 'white' }}></i>
+                                    </div>
+                                    <h3 className="text-sm font-bold text-primary mb-1">Moon Phase</h3>
+                                    <p className="text-xs text-slate-500">Lunar cycle trading strategy</p>
+                                </div>
+                                <div className="dark-card rounded-2xl p-4">
+                                    <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
+                                        <i data-lucide="layers" className="w-5 h-5" style={{ color: 'white' }}></i>
+                                    </div>
+                                    <h3 className="text-sm font-bold text-primary mb-1">SMC Analysis</h3>
+                                    <p className="text-xs text-slate-500">Order blocks & FVG detection</p>
+                                </div>
+                                <div className="dark-card rounded-2xl p-4">
+                                    <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
+                                        <i data-lucide="shield" className="w-5 h-5" style={{ color: 'white' }}></i>
+                                    </div>
+                                    <h3 className="text-sm font-bold text-primary mb-1">Risk Manager</h3>
+                                    <p className="text-xs text-slate-500">Position sizing calculator</p>
+                                </div>
+                            </div>
+
+                            {/* Quick Start */}
+                            <div className="border-t border-slate-800 pt-4">
+                                <h3 className="text-xs font-bold text-secondary uppercase tracking-wider mb-3">Popular Symbols</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {['AAPL', 'TSLA', 'RELIANCE.NS', 'BTC-USD', 'EURUSD=X'].map(symbol => (
                                         <button
-                                            key={tf}
-                                            onClick={() => handleTimeframeChange(tf)}
-                                            className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${timeframe === tf
-                                                ? 'btn-purple text-white'
-                                                : 'btn-dark text-secondary hover:text-primary'
-                                                }`}
+                                            key={symbol}
+                                            onClick={() => {
+                                                setTicker(symbol);
+                                                handleManualSearch({ preventDefault: () => { } });
+                                            }}
+                                            className="px-3 py-1.5 rounded-lg btn-dark text-xs font-bold text-secondary hover:text-primary transition-all"
                                         >
-                                            {tf}
+                                            {symbol}
                                         </button>
                                     ))}
                                 </div>
                             </div>
                         </div>
+                    )}
 
-                        {/* Welcome Dashboard - Show when no data */}
-                        {!marketData && (
-                            <div
-                                className="glass-card rounded-3xl p-6"
-                                style={{ animationDelay: '0.1s' }}
-                                data-aos="fade-up"
-                                data-aos-delay="200"
-                                data-tilt
-                                data-tilt-max="2"
-                            >
-                                <div className="text-center mb-6">
-                                    <h2 className="text-2xl font-black text-primary mb-2">Welcome to Sona AI</h2>
-                                    <p className="text-secondary text-sm">Advanced Stock Analysis with Smart Money Concepts</p>
-                                </div>
+                    {/* Signal Card */}
+                    {analysis && (
+                        <div className="glass-card rounded-3xl p-6 relative overflow-hidden fade-in-up" style={{ animationDelay: '0.1s' }}>
+                            <div className={`absolute top-0 left-0 w-1.5 h-full ${analysis.signal === 'BUY' ? 'bg-gradient-to-b from-green-400 to-green-600' : analysis.signal === 'SELL' ? 'bg-gradient-to-b from-red-400 to-red-600' : 'bg-slate-500'} `}></div>
 
-                                {/* Features Grid */}
-                                <div className="grid grid-cols-2 gap-3 mb-6">
-                                    <div className="dark-card rounded-2xl p-4">
-                                        <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
-                                            <i data-lucide="trending-up" className="w-5 h-5" style={{ color: 'white' }}></i>
-                                        </div>
-                                        <h3 className="text-sm font-bold text-primary mb-1">Smart Signals</h3>
-                                        <p className="text-xs text-slate-500">AI-powered BUY/SELL signals</p>
-                                    </div>
-                                    <div className="dark-card rounded-2xl p-4">
-                                        <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
-                                            <i data-lucide="moon" className="w-5 h-5" style={{ color: 'white' }}></i>
-                                        </div>
-                                        <h3 className="text-sm font-bold text-primary mb-1">Moon Phase</h3>
-                                        <p className="text-xs text-slate-500">Lunar cycle trading strategy</p>
-                                    </div>
-                                    <div className="dark-card rounded-2xl p-4">
-                                        <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
-                                            <i data-lucide="layers" className="w-5 h-5" style={{ color: 'white' }}></i>
-                                        </div>
-                                        <h3 className="text-sm font-bold text-primary mb-1">SMC Analysis</h3>
-                                        <p className="text-xs text-slate-500">Order blocks & FVG detection</p>
-                                    </div>
-                                    <div className="dark-card rounded-2xl p-4">
-                                        <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
-                                            <i data-lucide="shield" className="w-5 h-5" style={{ color: 'white' }}></i>
-                                        </div>
-                                        <h3 className="text-sm font-bold text-primary mb-1">Risk Manager</h3>
-                                        <p className="text-xs text-slate-500">Position sizing calculator</p>
+                            <div className="flex justify-between items-start mb-6">
+                                <div>
+                                    <h2 className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Trade Signal</h2>
+                                    <div className={`text-5xl font-black tracking-tight ${analysis.signal === 'BUY' ? 'text-green-400' : analysis.signal === 'SELL' ? 'text-red-400' : 'text-secondary'}`}>
+                                        {analysis.signal}
                                     </div>
                                 </div>
-
-                                {/* Quick Start */}
-                                <div className="border-t border-slate-800 pt-4">
-                                    <h3 className="text-xs font-bold text-secondary uppercase tracking-wider mb-3">Popular Symbols</h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {['AAPL', 'TSLA', 'RELIANCE.NS', 'BTC-USD', 'EURUSD=X'].map(symbol => (
-                                            <button
-                                                key={symbol}
-                                                onClick={() => {
-                                                    setTicker(symbol);
-                                                    handleManualSearch({ preventDefault: () => { } });
-                                                }}
-                                                className="px-3 py-1.5 rounded-lg btn-dark text-xs font-bold text-secondary hover:text-primary transition-all"
-                                            >
-                                                {symbol}
-                                            </button>
-                                        ))}
-                                    </div>
+                                <div className="text-right">
+                                    <div className="text-xs text-secondary mb-1 font-semibold">Confidence</div>
+                                    <div className="text-2xl font-black text-primary">{analysis.score}<span className="text-slate-500">/10</span></div>
                                 </div>
                             </div>
-                        )}
 
-                        {/* Signal Card */}
-                        {analysis && (
-                            <div
-                                className="glass-card rounded-3xl p-6 relative overflow-hidden"
-                                style={{ animationDelay: '0.1s' }}
-                                data-aos="flip-up"
-                                data-aos-delay="200"
-                                data-tilt
-                                data-tilt-glare
-                                data-tilt-max-glare="0.2"
-                            >
-                                <div className={`absolute top-0 left-0 w-1.5 h-full ${analysis.signal === 'BUY' ? 'bg-gradient-to-b from-green-400 to-green-600' : analysis.signal === 'SELL' ? 'bg-gradient-to-b from-red-400 to-red-600' : 'bg-slate-500'} `}></div>
+                            <div className="space-y-2.5 mb-6">
+                                {analysis.reasons.map((reason, idx) => (
+                                    <div key={idx} className="flex items-start gap-2.5 text-sm text-secondary">
+                                        <span className="text-purple-400 mt-0.5 font-bold">{reason.startsWith('✓') ? '✓' : reason.startsWith('✗') ? '✗' : reason.includes('🌑') || reason.includes('🌒') || reason.includes('🌓') || reason.includes('🌔') || reason.includes('🌕') || reason.includes('🌖') || reason.includes('🌗') || reason.includes('🌘') ? '' : '○'}</span>
+                                        <span className="leading-relaxed">{reason.replace(/^[✓✗○]\s*/, '')}</span>
+                                    </div>
+                                ))}
+                            </div>
 
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <h2 className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Trade Signal</h2>
-                                        <div className={`text-5xl font-black tracking-tight ${analysis.signal === 'BUY' ? 'text-green-400' : analysis.signal === 'SELL' ? 'text-red-400' : 'text-secondary'}`}>
-                                            {analysis.signal}
+                            {/* Entry & Targets Section */}
+                            {analysis.trade_levels && (
+                                <div className="accent-gradient rounded-2xl p-6 mb-4 smooth-shadow">
+                                    <div className="text-center pb-4 border-b border-border">
+                                        <div className="text-xs text-primary/70 uppercase tracking-wider mb-2 font-bold">Optimal Entry</div>
+                                        <div className="text-5xl font-black text-primary drop-shadow-lg">
+                                            {currency}{analysis.trade_levels.entry}
                                         </div>
+                                        <div className="text-xs text-primary/60 mt-2">Dynamic AI-Adjusted Price</div>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="text-xs text-secondary mb-1 font-semibold">Confidence</div>
-                                        <div className="text-2xl font-black text-primary">{analysis.score}<span className="text-slate-500">/10</span></div>
+                                    <div className="flex justify-between items-center text-sm py-1">
+                                        <span className="text-secondary flex items-center gap-1">
+                                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                            Stop Loss
+                                        </span>
+                                        <span className="text-red-400 font-bold">{currency}{analysis.trade_levels.stop_loss}</span>
                                     </div>
-                                </div>
-
-                                <div className="space-y-2.5 mb-6">
-                                    {analysis.reasons.map((reason, idx) => (
-                                        <div key={idx} className="flex items-start gap-2.5 text-sm text-secondary">
-                                            <span className="text-purple-400 mt-0.5 font-bold">{reason.startsWith('✓') ? '✓' : reason.startsWith('✗') ? '✗' : reason.includes('🌑') || reason.includes('🌒') || reason.includes('🌓') || reason.includes('🌔') || reason.includes('🌕') || reason.includes('🌖') || reason.includes('🌗') || reason.includes('🌘') ? '' : '○'}</span>
-                                            <span className="leading-relaxed">{reason.replace(/^[✓✗○]\s*/, '')}</span>
+                                    {analysis.trade_levels.targets.map((target, idx) => (
+                                        <div key={idx} className="flex justify-between items-center text-sm py-1">
+                                            <span className="text-secondary flex items-center gap-1">
+                                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                                {target.level} <span className="text-xs text-slate-500">({target.rr})</span>
+                                            </span>
+                                            <span className="text-green-400 font-bold">{currency}{target.price.toFixed(2)}</span>
                                         </div>
                                     ))}
+                                    <div className="flex justify-between items-center pt-3 border-t border-border text-sm">
+                                        <span className="text-secondary font-semibold">Risk per Trade</span>
+                                        <span className="text-orange-400 font-bold text-base">{currency}{analysis.trade_levels.risk_amount}</span>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+                                <div>
+                                    <div className="text-xs text-slate-500 mb-1">RSI (14)</div>
+                                    <div className="text-lg font-bold text-primary">{analysis.indicators.rsi}</div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-slate-500 mb-1">ATR</div>
+                                    <div className="text-lg font-bold text-primary">{analysis.indicators.atr}</div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Moon Phase Card */}
+                    {analysis && analysis.moon_phase && (
+                        <div className="glass-card rounded-3xl p-5 fade-in-up" style={{ animationDelay: '0.2s' }}>
+                            <h3 className="text-xs font-bold mb-4 text-secondary uppercase tracking-wider">Lunar Strategy</h3>
+
+                            <div className="text-center mb-4">
+                                <div className="text-6xl mb-2">{analysis.moon_phase.emoji}</div>
+                                <div className="text-lg font-bold text-primary mb-1">{analysis.moon_phase.phase_name}</div>
+                                <div className={`text-xs font-bold uppercase px-3 py-1 rounded-full inline-block ${analysis.moon_phase.bias === 'BULLISH' ? 'bg-green-500/20 text-green-400' :
+                                    analysis.moon_phase.bias === 'BEARISH' ? 'bg-red-500/20 text-red-400' :
+                                        'bg-slate-500/20 text-secondary'
+                                    }`}>
+                                    {analysis.moon_phase.bias}
+                                </div>
+                            </div>
+
+                            <div className="text-sm text-secondary text-center mb-4 leading-relaxed">
+                                {analysis.moon_phase.description}
+                            </div>
+
+                            <div className="bg-slate-500/10 rounded-xl p-3">
+                                <div className="flex justify-between text-xs mb-2">
+                                    <span className="text-slate-500">Cycle Progress</span>
+                                    <span className="text-purple-400 font-bold">{analysis.moon_phase.cycle_percentage}%</span>
+                                </div>
+                                <div className="w-full bg-slate-500/10 rounded-full h-2 overflow-hidden">
+                                    <div
+                                        className="h-full purple-gradient transition-all duration-500"
+                                        style={{ width: `${analysis.moon_phase.cycle_percentage}% ` }}
+                                    ></div>
+                                </div>
+                                <div className="text-xs text-slate-500 mt-2 text-center">
+                                    Day {analysis.moon_phase.days_in_cycle} of 29.53
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Risk Calculator */}
+                    {marketData && (
+                        <div className="bg-secondary/50 backdrop-blur-xl border border-border rounded-2xl p-6">
+                            <h2 className="text-sm font-semibold text-secondary mb-4 uppercase tracking-wider flex items-center gap-2">
+                                <i data-lucide="shield" className="w-4 h-4"></i>
+                                Risk Management
+                            </h2>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs text-slate-500 mb-1">Account Balance</label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-2 text-slate-500">{currency}</span>
+                                        <input
+                                            type="number"
+                                            value={accountBalance}
+                                            onChange={(e) => setAccountBalance(Number(e.target.value))}
+                                            className="w-full bg-input-bg border border-border rounded-lg pl-8 pr-4 py-2 text-sm text-primary"
+                                        />
+                                    </div>
                                 </div>
 
-                                {/* Entry & Targets Section */}
-                                {analysis.trade_levels && (
-                                    <div className="accent-gradient rounded-2xl p-6 mb-4 smooth-shadow">
-                                        <div className="text-center pb-4 border-b border-border">
-                                            <div className="text-xs text-primary/70 uppercase tracking-wider mb-2 font-bold">Optimal Entry</div>
-                                            <div className="text-5xl font-black text-primary drop-shadow-lg">
-                                                {currency}{analysis.trade_levels.entry}
-                                            </div>
-                                            <div className="text-xs text-primary/60 mt-2">Dynamic AI-Adjusted Price</div>
-                                        </div>
-                                        <div className="flex justify-between items-center text-sm py-1">
-                                            <span className="text-secondary flex items-center gap-1">
-                                                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                                                Stop Loss
-                                            </span>
-                                            <span className="text-red-400 font-bold">{currency}{analysis.trade_levels.stop_loss}</span>
-                                        </div>
-                                        {analysis.trade_levels.targets.map((target, idx) => (
-                                            <div key={idx} className="flex justify-between items-center text-sm py-1">
-                                                <span className="text-secondary flex items-center gap-1">
-                                                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-                                                    {target.level} <span className="text-xs text-slate-500">({target.rr})</span>
-                                                </span>
-                                                <span className="text-green-400 font-bold">{currency}{target.price.toFixed(2)}</span>
-                                            </div>
-                                        ))}
-                                        <div className="flex justify-between items-center pt-3 border-t border-border text-sm">
-                                            <span className="text-secondary font-semibold">Risk per Trade</span>
-                                            <span className="text-orange-400 font-bold text-base">{currency}{analysis.trade_levels.risk_amount}</span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+                                <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <div className="text-xs text-slate-500 mb-1">RSI (14)</div>
-                                        <div className="text-lg font-bold text-primary">{analysis.indicators.rsi}</div>
+                                        <label className="block text-xs text-slate-500 mb-1">Risk %</label>
+                                        <input
+                                            type="number"
+                                            value={riskPercent}
+                                            onChange={(e) => setRiskPercent(Number(e.target.value))}
+                                            className="w-full bg-input-bg border border-border rounded-lg px-4 py-2 text-sm text-primary"
+                                        />
                                     </div>
                                     <div>
-                                        <div className="text-xs text-slate-500 mb-1">ATR</div>
-                                        <div className="text-lg font-bold text-primary">{analysis.indicators.atr}</div>
+                                        <label className="block text-xs text-slate-500 mb-1">Stop Loss ({currency})</label>
+                                        <input
+                                            type="number"
+                                            value={stopLoss}
+                                            onChange={(e) => setStopLoss(Number(e.target.value))}
+                                            className="w-full bg-input-bg border border-border rounded-lg px-4 py-2 text-sm text-primary"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="bg-input-bg rounded-lg p-4 mt-4 space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-secondary">Position Size</span>
+                                        <span className="text-primary font-bold">{positionSize} shares</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-secondary">Total Value</span>
+                                        <span className="text-primary">{currency}{positionValue.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-secondary">Risk Amount</span>
+                                        <span className="text-red-400">-{currency}{riskAmount.toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        </div>
+                    )}
+                </div>
 
-                        {/* Moon Phase Card */}
-                        {analysis && analysis.moon_phase && (
-                            <div
-                                className="glass-card rounded-3xl p-5"
-                                style={{ animationDelay: '0.2s' }}
-                                data-aos="fade-right"
-                                data-aos-delay="300"
-                                data-tilt
-                            >
-                                <h3 className="text-xs font-bold mb-4 text-secondary uppercase tracking-wider">Lunar Strategy</h3>
 
-                                <div className="text-center mb-4">
-                                    <div className="text-6xl mb-2">{analysis.moon_phase.emoji}</div>
-                                    <div className="text-lg font-bold text-primary mb-1">{analysis.moon_phase.phase_name}</div>
-                                    <div className={`text-xs font-bold uppercase px-3 py-1 rounded-full inline-block ${analysis.moon_phase.bias === 'BULLISH' ? 'bg-green-500/20 text-green-400' :
-                                        analysis.moon_phase.bias === 'BEARISH' ? 'bg-red-500/20 text-red-400' :
-                                            'bg-slate-500/20 text-secondary'
-                                        }`}>
-                                        {analysis.moon_phase.bias}
-                                    </div>
+                {/* Right Panel: Charts */}
+                <div className="lg:col-span-8 space-y-6">
+                    {/* Chart */}
+                    <div className="glass-card rounded-3xl p-6 fade-in-up" style={{ animationDelay: '0.2s' }}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xs font-bold text-secondary uppercase tracking-wider">Price Chart</h3>
+                            {marketData && (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-green-400 pulse"></div>
+                                    <span className="text-xs text-secondary">Live Data</span>
                                 </div>
-
-                                <div className="text-sm text-secondary text-center mb-4 leading-relaxed">
-                                    {analysis.moon_phase.description}
-                                </div>
-
-                                <div className="bg-slate-500/10 rounded-xl p-3">
-                                    <div className="flex justify-between text-xs mb-2">
-                                        <span className="text-slate-500">Cycle Progress</span>
-                                        <span className="text-purple-400 font-bold">{analysis.moon_phase.cycle_percentage}%</span>
-                                    </div>
-                                    <div className="w-full bg-slate-500/10 rounded-full h-2 overflow-hidden">
-                                        <div
-                                            className="h-full purple-gradient transition-all duration-500"
-                                            style={{ width: `${analysis.moon_phase.cycle_percentage}% ` }}
-                                        ></div>
-                                    </div>
-                                    <div className="text-xs text-slate-500 mt-2 text-center">
-                                        Day {analysis.moon_phase.days_in_cycle} of 29.53
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Risk Calculator */}
-                        {marketData && (
-                            <div
-                                className="bg-secondary/50 backdrop-blur-xl border border-border rounded-2xl p-6"
-                                data-aos="fade-right"
-                                data-aos-delay="400"
-                            >
-                                <h2 className="text-sm font-semibold text-secondary mb-4 uppercase tracking-wider flex items-center gap-2">
-                                    <i data-lucide="shield" className="w-4 h-4"></i>
-                                    Risk Management
-                                </h2>
-
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs text-slate-500 mb-1">Account Balance</label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-2 text-slate-500">{currency}</span>
-                                            <input
-                                                type="number"
-                                                value={accountBalance}
-                                                onChange={(e) => setAccountBalance(Number(e.target.value))}
-                                                className="w-full bg-input-bg border border-border rounded-lg pl-8 pr-4 py-2 text-sm text-primary"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs text-slate-500 mb-1">Risk %</label>
-                                            <input
-                                                type="number"
-                                                value={riskPercent}
-                                                onChange={(e) => setRiskPercent(Number(e.target.value))}
-                                                className="w-full bg-input-bg border border-border rounded-lg px-4 py-2 text-sm text-primary"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs text-slate-500 mb-1">Stop Loss ({currency})</label>
-                                            <input
-                                                type="number"
-                                                value={stopLoss}
-                                                onChange={(e) => setStopLoss(Number(e.target.value))}
-                                                className="w-full bg-input-bg border border-border rounded-lg px-4 py-2 text-sm text-primary"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-input-bg rounded-lg p-4 mt-4 space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-secondary">Position Size</span>
-                                            <span className="text-primary font-bold">{positionSize} shares</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-secondary">Total Value</span>
-                                            <span className="text-primary">{currency}{positionValue.toLocaleString()}</span>
-                                        </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-secondary">Risk Amount</span>
-                                            <span className="text-red-400">-{currency}{riskAmount.toFixed(2)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-
-                    {/* Right Panel: Charts */}
-                    <div className="lg:col-span-8 space-y-6">
-                        {/* Chart */}
-                        <div
-                            className="glass-card rounded-3xl p-6"
-                            style={{ animationDelay: '0.2s' }}
-                            data-aos="zoom-in"
-                            data-aos-delay="100"
-                        >
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xs font-bold text-secondary uppercase tracking-wider">Price Chart</h3>
-                                {marketData && (
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full bg-green-400 pulse"></div>
-                                        <span className="text-xs text-secondary">Live Data</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            {!marketData ? (
-                                <div className="chart-container flex flex-col items-center justify-center" style={{ height: '500px' }}>
-                                    <div className="text-center max-w-md">
-                                        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl purple-gradient flex items-center justify-center">
-                                            <i data-lucide="bar-chart-3" className="w-10 h-10" style={{ color: 'white' }}></i>
-                                        </div>
-                                        <h3 className="text-2xl font-bold text-primary mb-3">Start Your Analysis</h3>
-                                        <p className="text-secondary text-sm mb-6">Search for any stock, crypto, or forex pair to view advanced technical analysis with Smart Money Concepts</p>
-
-                                        <div className="flex flex-wrap gap-2 justify-center">
-                                            <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-secondary">
-                                                <span className="text-green-400 font-bold">📈</span> Stocks
-                                            </div>
-                                            <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-secondary">
-                                                <span className="text-yellow-400 font-bold">₿</span> Crypto
-                                            </div>
-                                            <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-secondary">
-                                                <span className="text-blue-400 font-bold">💱</span> Forex
-                                            </div>
-                                            <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-secondary">
-                                                <span className="text-purple-400 font-bold">🌙</span> Moon Phase
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div ref={chartContainerRef} className="chart-container" style={{ height: '500px' }}></div>
                             )}
                         </div>
 
-                        {/* Market Insights Panel */}
-                        {marketData && analysis && (
-                            <div
-                                className="glass-card rounded-3xl p-6"
-                                style={{ animationDelay: '0.3s' }}
-                                data-aos="fade-up"
-                                data-aos-delay="200"
-                                data-tilt
-                                data-tilt-max="1"
-                            >
-                                <h3 className="text-xs font-bold text-secondary uppercase tracking-wider mb-4">Market Insights</h3>
-
-                                <div className="grid grid-cols-2 gap-4 mb-4">
-                                    <div className="dark-card rounded-2xl p-4">
-                                        <div className="text-xs text-slate-500 mb-1">Order Blocks</div>
-                                        <div className="text-2xl font-bold text-primary">{analysis.smc?.order_blocks?.length || 0}</div>
-                                        <div className="text-xs text-secondary mt-1">Detected</div>
+                        {!marketData ? (
+                            <div className="chart-container flex flex-col items-center justify-center" style={{ height: '500px' }}>
+                                <div className="text-center max-w-md">
+                                    <div className="w-20 h-20 mx-auto mb-6 rounded-2xl purple-gradient flex items-center justify-center">
+                                        <i data-lucide="bar-chart-3" className="w-10 h-10" style={{ color: 'white' }}></i>
                                     </div>
-                                    <div className="dark-card rounded-2xl p-4">
-                                        <div className="text-xs text-slate-500 mb-1">Fair Value Gaps</div>
-                                        <div className="text-2xl font-bold text-primary">{analysis.smc?.fvgs?.length || 0}</div>
-                                        <div className="text-xs text-secondary mt-1">Identified</div>
-                                    </div>
-                                </div>
+                                    <h3 className="text-2xl font-bold text-primary mb-3">Start Your Analysis</h3>
+                                    <p className="text-secondary text-sm mb-6">Search for any stock, crypto, or forex pair to view advanced technical analysis with Smart Money Concepts</p>
 
-                                <div className="space-y-3">
-                                    <div className="dark-card rounded-2xl p-4">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-xs text-slate-500">EMA Trend</span>
-                                            <span className={`text-sm font-bold ${analysis.ema_trend === 'BULLISH' ? 'text-green-400' : analysis.ema_trend === 'BEARISH' ? 'text-red-400' : 'text-secondary'}`}>
-                                                {analysis.ema_trend}
-                                            </span>
+                                    <div className="flex flex-wrap gap-2 justify-center">
+                                        <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-secondary">
+                                            <span className="text-green-400 font-bold">📈</span> Stocks
                                         </div>
-                                    </div>
-
-                                    <div className="dark-card rounded-2xl p-4">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-xs text-slate-500">RSI</span>
-                                            <span className={`text-sm font-bold ${analysis.rsi > 70 ? 'text-red-400' : analysis.rsi < 30 ? 'text-green-400' : 'text-primary'}`}>
-                                                {analysis.rsi?.toFixed(1)}
-                                            </span>
+                                        <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-secondary">
+                                            <span className="text-yellow-400 font-bold">₿</span> Crypto
                                         </div>
-                                        <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2">
-                                            <div
-                                                className={`h-1.5 rounded-full ${analysis.rsi > 70 ? 'bg-red-400' : analysis.rsi < 30 ? 'bg-green-400' : 'bg-purple-400'}`}
-                                                style={{ width: `${Math.min(analysis.rsi, 100)}%` }}
-                                            ></div>
+                                        <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-secondary">
+                                            <span className="text-blue-400 font-bold">💱</span> Forex
                                         </div>
-                                    </div>
-
-                                    <div className="dark-card rounded-2xl p-4">
-                                        <div className="text-xs text-slate-500 mb-2">Timeframe</div>
-                                        <div className="text-sm font-bold text-primary">{timeframe}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* SMC Details Panel (Order Blocks & FVGs) */}
-                        {marketData && analysis && (
-                            <div
-                                className="glass-card rounded-3xl p-6"
-                                style={{ animationDelay: '0.4s' }}
-                                data-aos="fade-up"
-                                data-aos-delay="300"
-                                data-tilt
-                                data-tilt-max="1"
-                            >
-                                <h3 className="text-xs font-bold text-secondary uppercase tracking-wider mb-4">Smart Money Concepts</h3>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {/* Order Blocks */}
-                                    <div className="dark-card rounded-2xl p-4">
-                                        <h4 className="text-xs font-bold text-slate-500 mb-3 uppercase">Order Blocks</h4>
-                                        <div className="space-y-2 max-h-40 overflow-y-auto">
-                                            {analysis.smc?.order_blocks?.length > 0 ? (
-                                                analysis.smc.order_blocks.map((ob, idx) => (
-                                                    <div key={idx} className="flex justify-between items-center text-sm">
-                                                        <span className={`font-semibold ${ob.type === 'bullish' ? 'text-green-400' : 'text-red-400'}`}>
-                                                            {ob.type.toUpperCase()}
-                                                        </span>
-                                                        <span className="text-secondary">{currency}{ob.price.toFixed(2)}</span>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <span className="text-slate-500 text-xs">None detected</span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Fair Value Gaps */}
-                                    <div className="dark-card rounded-2xl p-4">
-                                        <h4 className="text-xs font-bold text-slate-500 mb-3 uppercase">Fair Value Gaps</h4>
-                                        <div className="space-y-2 max-h-40 overflow-y-auto">
-                                            {analysis.smc?.fvgs?.length > 0 ? (
-                                                analysis.smc.fvgs.map((fvg, idx) => (
-                                                    <div key={idx} className="flex justify-between items-center text-sm">
-                                                        <span className={`font-semibold ${fvg.type === 'bullish' ? 'text-green-400' : 'text-red-400'}`}>
-                                                            {fvg.type.toUpperCase()}
-                                                        </span>
-                                                        <span className="text-secondary text-xs">{currency}{fvg.bottom.toFixed(2)} - {currency}{fvg.top.toFixed(2)}</span>
-                                                    </div>
-                                                ))
-                                            ) : (
-                                                <span className="text-slate-500 text-xs">None detected</span>
-                                            )}
+                                        <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-secondary">
+                                            <span className="text-purple-400 font-bold">🌙</span> Moon Phase
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                        ) : (
+                            <div ref={chartContainerRef} className="chart-container" style={{ height: '500px' }}></div>
                         )}
                     </div>
-                </div >
-            </div >
+
+                    {/* Market Insights Panel */}
+                    {marketData && analysis && (
+                        <div className="glass-card rounded-3xl p-6 fade-in-up" style={{ animationDelay: '0.3s' }}>
+                            <h3 className="text-xs font-bold text-secondary uppercase tracking-wider mb-4">Market Insights</h3>
+
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div className="dark-card rounded-2xl p-4">
+                                    <div className="text-xs text-slate-500 mb-1">Order Blocks</div>
+                                    <div className="text-2xl font-bold text-primary">{analysis.smc?.order_blocks?.length || 0}</div>
+                                    <div className="text-xs text-secondary mt-1">Detected</div>
+                                </div>
+                                <div className="dark-card rounded-2xl p-4">
+                                    <div className="text-xs text-slate-500 mb-1">Fair Value Gaps</div>
+                                    <div className="text-2xl font-bold text-primary">{analysis.smc?.fvgs?.length || 0}</div>
+                                    <div className="text-xs text-secondary mt-1">Identified</div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="dark-card rounded-2xl p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs text-slate-500">EMA Trend</span>
+                                        <span className={`text-sm font-bold ${analysis.ema_trend === 'BULLISH' ? 'text-green-400' : analysis.ema_trend === 'BEARISH' ? 'text-red-400' : 'text-secondary'}`}>
+                                            {analysis.ema_trend}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="dark-card rounded-2xl p-4">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-xs text-slate-500">RSI</span>
+                                        <span className={`text-sm font-bold ${analysis.rsi > 70 ? 'text-red-400' : analysis.rsi < 30 ? 'text-green-400' : 'text-primary'}`}>
+                                            {analysis.rsi?.toFixed(1)}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2">
+                                        <div
+                                            className={`h-1.5 rounded-full ${analysis.rsi > 70 ? 'bg-red-400' : analysis.rsi < 30 ? 'bg-green-400' : 'bg-purple-400'}`}
+                                            style={{ width: `${Math.min(analysis.rsi, 100)}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+
+                                <div className="dark-card rounded-2xl p-4">
+                                    <div className="text-xs text-slate-500 mb-2">Timeframe</div>
+                                    <div className="text-sm font-bold text-primary">{timeframe}</div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* SMC Details Panel (Order Blocks & FVGs) */}
+                    {marketData && analysis && (
+                        <div className="glass-card rounded-3xl p-6 fade-in-up" style={{ animationDelay: '0.4s' }}>
+                            <h3 className="text-xs font-bold text-secondary uppercase tracking-wider mb-4">Smart Money Concepts</h3>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Order Blocks */}
+                                <div className="dark-card rounded-2xl p-4">
+                                    <h4 className="text-xs font-bold text-slate-500 mb-3 uppercase">Order Blocks</h4>
+                                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                                        {analysis.smc?.order_blocks?.length > 0 ? (
+                                            analysis.smc.order_blocks.map((ob, idx) => (
+                                                <div key={idx} className="flex justify-between items-center text-sm">
+                                                    <span className={`font-semibold ${ob.type === 'bullish' ? 'text-green-400' : 'text-red-400'}`}>
+                                                        {ob.type.toUpperCase()}
+                                                    </span>
+                                                    <span className="text-secondary">{currency}{ob.price.toFixed(2)}</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <span className="text-slate-500 text-xs">None detected</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Fair Value Gaps */}
+                                <div className="dark-card rounded-2xl p-4">
+                                    <h4 className="text-xs font-bold text-slate-500 mb-3 uppercase">Fair Value Gaps</h4>
+                                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                                        {analysis.smc?.fvgs?.length > 0 ? (
+                                            analysis.smc.fvgs.map((fvg, idx) => (
+                                                <div key={idx} className="flex justify-between items-center text-sm">
+                                                    <span className={`font-semibold ${fvg.type === 'bullish' ? 'text-green-400' : 'text-red-400'}`}>
+                                                        {fvg.type.toUpperCase()}
+                                                    </span>
+                                                    <span className="text-secondary text-xs">{currency}{fvg.bottom.toFixed(2)} - {currency}{fvg.top.toFixed(2)}</span>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <span className="text-slate-500 text-xs">None detected</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div >
     );
 };

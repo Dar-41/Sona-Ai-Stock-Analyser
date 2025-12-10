@@ -403,10 +403,10 @@ def analyze_market_structure(df, timeframe="1D"):
     for ob in obs[-3:]:
         if ob['type'] == 'bullish' and abs(ob['price'] - current_price) / current_price < 0.02:
             score += 1.5
-            reasons.append(f"✓ Near Bullish OB @ ${ob['price']:.2f}")
+            reasons.append(f"✓ Near Bullish OB @ {ob['price']:.2f}")
         elif ob['type'] == 'bearish' and abs(ob['price'] - current_price) / current_price < 0.02:
             score -= 1.5
-            reasons.append(f"✗ Near Bearish OB @ ${ob['price']:.2f}")
+            reasons.append(f"✗ Near Bearish OB @ {ob['price']:.2f}")
     
     # FVG Analysis
     for fvg in fvgs[-3:]:

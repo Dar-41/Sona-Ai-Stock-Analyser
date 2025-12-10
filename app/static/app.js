@@ -663,7 +663,7 @@ const App = () => {
                                     <div className="text-center pb-4 border-b border-border">
                                         <div className="text-xs text-primary/70 uppercase tracking-wider mb-2 font-bold">Optimal Entry</div>
                                         <div className="text-5xl font-black text-primary drop-shadow-lg">
-                                            ${analysis.trade_levels.entry}
+                                            {currency}{analysis.trade_levels.entry}
                                         </div>
                                         <div className="text-xs text-primary/60 mt-2">Dynamic AI-Adjusted Price</div>
                                     </div>
@@ -672,7 +672,7 @@ const App = () => {
                                             <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                                             Stop Loss
                                         </span>
-                                        <span className="text-red-400 font-bold">${analysis.trade_levels.stop_loss}</span>
+                                        <span className="text-red-400 font-bold">{currency}{analysis.trade_levels.stop_loss}</span>
                                     </div>
                                     {analysis.trade_levels.targets.map((target, idx) => (
                                         <div key={idx} className="flex justify-between items-center text-sm py-1">
@@ -680,12 +680,12 @@ const App = () => {
                                                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                                                 {target.level} <span className="text-xs text-slate-500">({target.rr})</span>
                                             </span>
-                                            <span className="text-green-400 font-bold">${target.price.toFixed(2)}</span>
+                                            <span className="text-green-400 font-bold">{currency}{target.price.toFixed(2)}</span>
                                         </div>
                                     ))}
                                     <div className="flex justify-between items-center pt-3 border-t border-border text-sm">
                                         <span className="text-secondary font-semibold">Risk per Trade</span>
-                                        <span className="text-orange-400 font-bold text-base">${analysis.trade_levels.risk_amount}</span>
+                                        <span className="text-orange-400 font-bold text-base">{currency}{analysis.trade_levels.risk_amount}</span>
                                     </div>
                                 </div>
                             )}
@@ -753,7 +753,7 @@ const App = () => {
                                 <div>
                                     <label className="block text-xs text-slate-500 mb-1">Account Balance</label>
                                     <div className="relative">
-                                        <span className="absolute left-3 top-2 text-slate-500">$</span>
+                                        <span className="absolute left-3 top-2 text-slate-500">{currency}</span>
                                         <input
                                             type="number"
                                             value={accountBalance}
@@ -774,7 +774,7 @@ const App = () => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-slate-500 mb-1">Stop Loss ($)</label>
+                                        <label className="block text-xs text-slate-500 mb-1">Stop Loss ({currency})</label>
                                         <input
                                             type="number"
                                             value={stopLoss}
@@ -791,11 +791,11 @@ const App = () => {
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-secondary">Total Value</span>
-                                        <span className="text-primary">${positionValue.toLocaleString()}</span>
+                                        <span className="text-primary">{currency}{positionValue.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
                                         <span className="text-secondary">Risk Amount</span>
-                                        <span className="text-red-400">-${riskAmount.toFixed(2)}</span>
+                                        <span className="text-red-400">-{currency}{riskAmount.toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>

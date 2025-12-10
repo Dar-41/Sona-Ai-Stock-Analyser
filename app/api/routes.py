@@ -204,30 +204,44 @@ def normalize_ticker(raw_ticker):
         return "BZ=F"  # Brent Crude
     
     # Handle Indian stocks - if it looks like an Indian stock, add .NS
-    # Common Indian stock patterns: all caps, 3-12 chars
-    if len(ticker) >= 3 and len(ticker) <= 12 and ticker.isalpha() and "." not in ticker:
-        # Check if it might be an Indian stock (heuristic)
-        indian_keywords = ["JIO", "RELIANCE", "TCS", "INFY", "HDFC", "ICICI", "SBIN", "BHARTI", "ADANI", 
-                          "TATA", "WIPRO", "MARUTI", "BAJAJ", "AIRTEL", "COAL", "ONGC", "BPCL", "IOC",
-                          "NTPC", "POWER", "TITAN", "ASIAN", "ULTRA", "GRASIM", "HIND", "SUN", "CIPLA",
-                          "DIVI", "APOLLO", "NESTLE", "BRITANNIA", "DABUR", "MARICO", "EICHER", "HERO"]
+    # Common Indian stock patterns: all caps, 3-20 chars
+    if len(ticker) >= 3 and len(ticker) <= 20 and ticker.isalpha() and "." not in ticker:
+        # Check if it looks like an Indian stock (extended list)
+        indian_roots = [
+            "JIO", "RELIANCE", "TCS", "INFY", "HDFC", "ICICI", "SBIN", "BHARTI", "ADANI", 
+            "TATA", "WIPRO", "MARUTI", "BAJAJ", "AIRTEL", "COAL", "ONGC", "BPCL", "IOC",
+            "NTPC", "POWER", "TITAN", "ASIAN", "ULTRA", "GRASIM", "HIND", "SUN", "CIPLA",
+            "DIVI", "APOLLO", "NESTLE", "BRITANNIA", "DABUR", "MARICO", "EICHER", "HERO",
+            "ZOMATO", "PAYTM", "POLICY", "NYKAA", "DELHIVERY", "LIC", "IRCTC", "RVNL",
+            "IRFC", "MAZDOCK", "HAL", "BEL", "BHEL", "SAIL", "VEDL", "JSW", "JINDAL",
+            "DLF", "GODREJ", "PIDILITE", "HAVELLS", "SIEMENS", "ABB", "DMART", "VBL",
+            "TRENT", "NAUKRI", "INDIGO", "BOSCH", "MRF", "PAGE", "EICHER", "MOTHER",
+            "BANDHAN", "BANK", "FIN", "CAP", "CHEM", "PHARMA", "LAB", "AUTO", "MOTORS",
+            "STEEL", "POWER", "ENERGY", "GAS", "OIL", "CEMENT", "PAINTS", "FOODS"
+        ]
         
-        # Check if ticker contains any Indian keyword or is a known pattern
-        if any(keyword in ticker for keyword in indian_keywords):
+        # Check if ticker starts with or contains any Indian keyword
+        if any(root in ticker for root in indian_roots):
             return ticker + ".NS"
+            
+        # Heuristic: If it's not a known US stock/crypto/forex, try pinning to NSE
+        # Known non-Indian major tickers to excluded
+        us_majors = ["AAPL", "MSFT", "GOOG", "GOOGL", "AMZN", "TSLA", "META", "NVDA", 
+                    "AMD", "INTC", "NFLX", "ADBE", "CRM", "CSCO", "PEP", "KO", "JPM", "V", 
+                    "MA", "WMT", "PG", "JNJ", "XOM", "CVX", "BAC", "DIS", "MCD"]
         
-        # If it's a short ticker (3-5 chars) and not in US stock format, try .NS
-        # This helps with stocks like "LT", "ITC", etc.
-        if len(ticker) <= 5 and ticker not in ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA", "META", "NVDA"]:
-            # Could be Indian stock, but we'll let the fetch function try alternatives
-            pass
-    
+        if ticker not in us_majors:
+             # Just return the ticker, the fetcher will try .NS and .BO suffixes 
+             # via the 'alternatives' logic which is already implemented.
+             # However, to prioritize Indian stocks as requested:
+             return ticker + ".NS"
+
     # Handle commodities futures (add =F if it looks like a commodity code)
     if len(ticker) == 2 and ticker in ["GC", "SI", "CL", "NG", "HG", "PL", "PA", "BZ"]:
         return ticker + "=F"
     
     # Handle index format (add ^ if it looks like an index)
-    index_codes = ["GSPC", "DJI", "IXIC", "RUT", "VIX", "NSEI", "BSESN", "FTSE", "GDAXI", "FCHI", "N225", "HSI"]
+    index_codes = ["GSPC", "DJI", "IXIC", "RUT", "VIX", "NSEI", "BSESN", "FTSE", "GDAXI", "FCHI", "N225", "HSI", "BANKNIFTY", "CNXIT"]
     if ticker in index_codes:
         return "^" + ticker
     
@@ -243,6 +257,7 @@ def normalize_ticker(raw_ticker):
         "BITCOIN": "BTC-USD",
         "ETHEREUM": "ETH-USD",
         "NIFTY": "^NSEI",
+        "BANKNIFTY": "^BANKNIFTY",
         "SENSEX": "^BSESN",
         "SPX": "^GSPC",
         "DOW": "^DJI",

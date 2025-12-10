@@ -8,6 +8,14 @@ Institutional grade stock analysis application with image recognition and techni
 - **Analysis**: Pandas, TA-Lib, YFinance
 - **OCR**: Tesseract
 
+## Features
+- **Real-Time Market Data**: Stocks, Crypto, Forex, and Indices.
+- **Smart Money Concepts (SMC)**: Automated detection of Order Blocks and Fair Value Gaps.
+- **AI Analysis**: Confluence scoring, signal generation, and moon phase strategy.
+- **Risk Management**: Integrated position size and risk calculator.
+- **Theme Support**: Toggle between Light and Dark modes.
+- **Responsive Design**: Fully responsive UI for desktop and mobile.
+
 ## Supported Assets (TradingView Compatible)
 
 ### Cryptocurrencies

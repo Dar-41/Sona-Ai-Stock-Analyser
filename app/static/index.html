@@ -28,18 +28,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-            darkMode: 'class',
+            darkMode: ['class', '[data-theme="dark"]'],
             theme: {
                 extend: {
                     colors: {
-                        primary: '#0F172A',
-                        secondary: '#1E293B',
+                        primary: 'var(--bg-primary)',
+                        secondary: 'var(--bg-secondary)',
                         accent: '#38BDF8',
                         success: '#10B981',
                         danger: '#EF4444',
                         warning: '#F59E0B',
+                        card: 'var(--card-bg)',
+                        border: 'var(--card-border)',
+                    },
+                    textColor: {
+                        primary: 'var(--text-primary)',
+                        secondary: 'var(--text-secondary)',
+                    },
+                    borderColor: {
+                        DEFAULT: 'var(--card-border)',
                     }
-
                 }
             }
         }
@@ -66,6 +74,36 @@
     <link rel="stylesheet" href="/static/style.css">
 
     <style>
+        :root {
+            /* Light Theme Defaults */
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --card-border: rgba(0, 0, 0, 0.08);
+            --input-bg: #f1f5f9;
+            --input-border: #e2e8f0;
+            --chart-bg: #ffffff;
+            --chart-text: #334155;
+            --chart-grid: #e2e8f0;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Overrides */
+            --bg-primary: #0f1419;
+            --bg-secondary: #1e293b;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --card-bg: rgba(20, 25, 35, 0.95);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --input-bg: rgba(25, 30, 40, 0.8);
+            --input-border: rgba(255, 255, 255, 0.12);
+            --chart-bg: #1E293B;
+            --chart-text: #94A3B8;
+            --chart-grid: #334155;
+        }
+
         * {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             margin: 0;
@@ -74,17 +112,19 @@
         }
 
         body {
-            background: #0f1419;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             min-height: 100vh;
-            color: #fff;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         .glass-card {
-            background: rgba(20, 25, 35, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
         }
 
         .glass-card-hover {
@@ -102,25 +142,27 @@
         }
 
         .dark-card {
-            background: rgba(25, 30, 40, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: var(--bg-secondary);
+            border: 1px solid var(--card-border);
         }
 
         .input-modern {
-            background: rgba(25, 30, 40, 0.8);
-            border: 1.5px solid rgba(255, 255, 255, 0.12);
+            background: var(--input-bg);
+            border: 1.5px solid var(--input-border);
+            color: var(--text-primary);
             transition: all 0.2s ease;
         }
 
         .input-modern:focus {
-            background: rgba(25, 30, 40, 1);
             border-color: #8b5cf6;
             box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+            outline: none;
         }
 
         .btn-purple {
             background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
             border: none;
+            color: white;
             transition: all 0.2s ease;
             box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
         }
@@ -136,14 +178,16 @@
         }
 
         .btn-dark {
-            background: rgba(30, 35, 45, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: var(--bg-secondary);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
             transition: all 0.2s ease;
         }
 
         .btn-dark:hover {
-            background: rgba(40, 45, 60, 1);
-            border-color: rgba(255, 255, 255, 0.2);
+            background: var(--input-bg);
+            border-color: var(--text-secondary);
+            color: var(--text-primary);
         }
 
         @keyframes fadeInUp {
@@ -201,7 +245,7 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(0, 0, 0, 0.05);
         }
 
         ::-webkit-scrollbar-thumb {
@@ -222,9 +266,10 @@
         }
 
         .chart-container {
-            background: rgba(15, 20, 30, 0.8);
+            background: var(--chart-bg);
             border-radius: 20px;
             overflow: hidden;
+            border: 1px solid var(--card-border);
         }
     </style>
 </head>

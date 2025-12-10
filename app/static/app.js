@@ -4,6 +4,7 @@ const { createChart } = LightweightCharts;
 
 const App = () => {
     const [status, setStatus] = useState('System Ready');
+    const [theme, setTheme] = useState('light'); // Default to light
     const [ticker, setTicker] = useState('');
     const [timeframe, setTimeframe] = useState('1D');
     const [marketData, setMarketData] = useState(null);
@@ -123,6 +124,11 @@ const App = () => {
     ];
 
     useEffect(() => {
+        // Set theme attribute
+        document.documentElement.setAttribute('data-theme', theme);
+    }, [theme]);
+
+    useEffect(() => {
         // Initialize Lucide icons with a small delay to ensure DOM is ready
         const timer = setTimeout(() => {
             if (window.lucide && window.lucide.createIcons) {
@@ -131,7 +137,7 @@ const App = () => {
         }, 100);
 
         return () => clearTimeout(timer);
-    }, [marketData, analysis]);
+    }, [marketData, analysis, theme]);
 
     // Initialize Chart
     useEffect(() => {
@@ -162,18 +168,22 @@ const App = () => {
         // Create new chart
         const chart = createChart(chartContainerRef.current, {
             layout: {
-                background: { type: 'solid', color: '#1E293B' },
-                textColor: '#94A3B8',
+                background: { type: 'solid', color: theme === 'dark' ? '#1E293B' : '#ffffff' },
+                textColor: theme === 'dark' ? '#94A3B8' : '#334155',
             },
             grid: {
-                vertLines: { color: '#334155' },
-                horzLines: { color: '#334155' },
+                vertLines: { color: theme === 'dark' ? '#334155' : '#e2e8f0' },
+                horzLines: { color: theme === 'dark' ? '#334155' : '#e2e8f0' },
             },
             width: chartContainerRef.current.clientWidth,
             height: 500,
             timeScale: {
                 timeVisible: true,
                 secondsVisible: false,
+                borderColor: theme === 'dark' ? '#334155' : '#e2e8f0',
+            },
+            rightPriceScale: {
+                borderColor: theme === 'dark' ? '#334155' : '#e2e8f0',
             },
         });
 
@@ -264,7 +274,7 @@ const App = () => {
                 }
             }
         };
-    }, [marketData, analysis]);
+    }, [marketData, analysis, theme]);
 
     const handleFileUpload = async (event) => {
         const file = event.target.files[0];
@@ -468,7 +478,7 @@ const App = () => {
                 <div className="flex items-center gap-3">
                     <img src="/static/logo.png?v=4" alt="Sona AI" className="w-12 h-12 object-contain" />
                     <div>
-                        <h1 className="text-xl font-bold text-white">
+                        <h1 className="text-xl font-bold text-primary">
                             Sona AI
                         </h1>
                         <p className="text-xs text-slate-500 font-medium">Stock Analyser</p>
@@ -477,13 +487,20 @@ const App = () => {
                 <div className="flex items-center gap-2">
                     <div className="dark-card px-3 py-2 rounded-full flex items-center gap-2">
                         <div className={`w-2 h-2 rounded-full ${loading ? 'bg-yellow-400 pulse' : 'bg-green-400 pulse'}`}></div>
-                        <span className="text-xs text-slate-300 font-medium">{status}</span>
+                        <span className="text-xs text-secondary font-medium">{status}</span>
                         {marketData && (
                             <span className="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
                                 {analysis?.data_source || 'Live'}
                             </span>
                         )}
                     </div>
+                    <button
+                        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                        className="p-2 rounded-full hover:bg-slate-500/10 transition-colors"
+                        title="Toggle Theme"
+                    >
+                        <i data-lucide={theme === 'dark' ? 'sun' : 'moon'} className="w-5 h-5 text-secondary"></i>
+                    </button>
                 </div>
             </header>
 
@@ -493,7 +510,7 @@ const App = () => {
                 <div className="lg:col-span-4 space-y-4">
                     {/* Search Card */}
                     <div className="glass-card rounded-3xl p-5 fade-in-up">
-                        <h3 className="text-xs font-bold mb-4 text-slate-400 uppercase tracking-wider">Search Symbol</h3>
+                        <h3 className="text-xs font-bold mb-4 text-secondary uppercase tracking-wider">Search Symbol</h3>
 
                         <div ref={searchRef} className="relative mb-4">
                             <form onSubmit={handleManualSearch} className="relative">
@@ -503,10 +520,10 @@ const App = () => {
                                     onChange={handleSearchInput}
                                     onFocus={() => setShowSuggestions(true)}
                                     placeholder="Search stocks, crypto, forex..."
-                                    className="w-full input-modern rounded-2xl pl-11 pr-4 py-3 text-sm focus:outline-none text-white placeholder-slate-600 font-medium"
+                                    className="w-full input-modern rounded-2xl pl-11 pr-4 py-3 text-sm focus:outline-none text-primary placeholder-slate-600 font-medium"
                                     autoComplete="off"
                                 />
-                                <i data-lucide="search" className="w-5 h-5 text-slate-400 absolute left-3 top-3"></i>
+                                <i data-lucide="search" className="w-5 h-5 text-secondary absolute left-3 top-3"></i>
                             </form>
 
                             {/* Suggestions Dropdown */}
@@ -517,11 +534,11 @@ const App = () => {
                                             <div
                                                 key={idx}
                                                 onClick={() => handleSelectSuggestion(item.symbol)}
-                                                className="flex items-center gap-3 px-4 py-3 hover:bg-purple-500/10 cursor-pointer transition-colors border-b border-white/5 last:border-0"
+                                                className="flex items-center gap-3 px-4 py-3 hover:bg-purple-500/10 cursor-pointer transition-colors border-b border-border last:border-0"
                                             >
                                                 <span className="text-xl">{item.icon}</span>
                                                 <div className="flex-1">
-                                                    <div className="text-white font-semibold text-sm">{item.symbol}</div>
+                                                    <div className="text-primary font-semibold text-sm">{item.symbol}</div>
                                                     <div className="text-slate-500 text-xs">{item.name}</div>
                                                 </div>
                                                 <span className="text-xs text-purple-400 font-bold">{item.category}</span>
@@ -542,7 +559,7 @@ const App = () => {
                                         onClick={() => handleTimeframeChange(tf)}
                                         className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${timeframe === tf
                                             ? 'btn-purple text-white'
-                                            : 'btn-dark text-slate-300 hover:text-white'
+                                            : 'btn-dark text-secondary hover:text-primary'
                                             }`}
                                     >
                                         {tf}
@@ -556,8 +573,8 @@ const App = () => {
                     {!marketData && (
                         <div className="glass-card rounded-3xl p-6 fade-in-up" style={{ animationDelay: '0.1s' }}>
                             <div className="text-center mb-6">
-                                <h2 className="text-2xl font-black text-white mb-2">Welcome to Sona AI</h2>
-                                <p className="text-slate-400 text-sm">Advanced Stock Analysis with Smart Money Concepts</p>
+                                <h2 className="text-2xl font-black text-primary mb-2">Welcome to Sona AI</h2>
+                                <p className="text-secondary text-sm">Advanced Stock Analysis with Smart Money Concepts</p>
                             </div>
 
                             {/* Features Grid */}
@@ -566,35 +583,35 @@ const App = () => {
                                     <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
                                         <i data-lucide="trending-up" className="w-5 h-5" style={{ color: 'white' }}></i>
                                     </div>
-                                    <h3 className="text-sm font-bold text-white mb-1">Smart Signals</h3>
+                                    <h3 className="text-sm font-bold text-primary mb-1">Smart Signals</h3>
                                     <p className="text-xs text-slate-500">AI-powered BUY/SELL signals</p>
                                 </div>
                                 <div className="dark-card rounded-2xl p-4">
                                     <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
                                         <i data-lucide="moon" className="w-5 h-5" style={{ color: 'white' }}></i>
                                     </div>
-                                    <h3 className="text-sm font-bold text-white mb-1">Moon Phase</h3>
+                                    <h3 className="text-sm font-bold text-primary mb-1">Moon Phase</h3>
                                     <p className="text-xs text-slate-500">Lunar cycle trading strategy</p>
                                 </div>
                                 <div className="dark-card rounded-2xl p-4">
                                     <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
                                         <i data-lucide="layers" className="w-5 h-5" style={{ color: 'white' }}></i>
                                     </div>
-                                    <h3 className="text-sm font-bold text-white mb-1">SMC Analysis</h3>
+                                    <h3 className="text-sm font-bold text-primary mb-1">SMC Analysis</h3>
                                     <p className="text-xs text-slate-500">Order blocks & FVG detection</p>
                                 </div>
                                 <div className="dark-card rounded-2xl p-4">
                                     <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
                                         <i data-lucide="shield" className="w-5 h-5" style={{ color: 'white' }}></i>
                                     </div>
-                                    <h3 className="text-sm font-bold text-white mb-1">Risk Manager</h3>
+                                    <h3 className="text-sm font-bold text-primary mb-1">Risk Manager</h3>
                                     <p className="text-xs text-slate-500">Position sizing calculator</p>
                                 </div>
                             </div>
 
                             {/* Quick Start */}
                             <div className="border-t border-slate-800 pt-4">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Popular Symbols</h3>
+                                <h3 className="text-xs font-bold text-secondary uppercase tracking-wider mb-3">Popular Symbols</h3>
                                 <div className="flex flex-wrap gap-2">
                                     {['AAPL', 'TSLA', 'RELIANCE.NS', 'BTC-USD', 'EURUSD=X'].map(symbol => (
                                         <button
@@ -603,7 +620,7 @@ const App = () => {
                                                 setTicker(symbol);
                                                 handleManualSearch({ preventDefault: () => { } });
                                             }}
-                                            className="px-3 py-1.5 rounded-lg btn-dark text-xs font-bold text-slate-300 hover:text-white transition-all"
+                                            className="px-3 py-1.5 rounded-lg btn-dark text-xs font-bold text-secondary hover:text-primary transition-all"
                                         >
                                             {symbol}
                                         </button>
@@ -620,20 +637,20 @@ const App = () => {
 
                             <div className="flex justify-between items-start mb-6">
                                 <div>
-                                    <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Trade Signal</h2>
-                                    <div className={`text-5xl font-black tracking-tight ${analysis.signal === 'BUY' ? 'text-green-400' : analysis.signal === 'SELL' ? 'text-red-400' : 'text-slate-300'}`}>
+                                    <h2 className="text-xs font-bold text-secondary uppercase tracking-wider mb-2">Trade Signal</h2>
+                                    <div className={`text-5xl font-black tracking-tight ${analysis.signal === 'BUY' ? 'text-green-400' : analysis.signal === 'SELL' ? 'text-red-400' : 'text-secondary'}`}>
                                         {analysis.signal}
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-xs text-slate-400 mb-1 font-semibold">Confidence</div>
-                                    <div className="text-2xl font-black text-white">{analysis.score}<span className="text-slate-500">/10</span></div>
+                                    <div className="text-xs text-secondary mb-1 font-semibold">Confidence</div>
+                                    <div className="text-2xl font-black text-primary">{analysis.score}<span className="text-slate-500">/10</span></div>
                                 </div>
                             </div>
 
                             <div className="space-y-2.5 mb-6">
                                 {analysis.reasons.map((reason, idx) => (
-                                    <div key={idx} className="flex items-start gap-2.5 text-sm text-slate-300">
+                                    <div key={idx} className="flex items-start gap-2.5 text-sm text-secondary">
                                         <span className="text-purple-400 mt-0.5 font-bold">{reason.startsWith('✓') ? '✓' : reason.startsWith('✗') ? '✗' : reason.includes('🌑') || reason.includes('🌒') || reason.includes('🌓') || reason.includes('🌔') || reason.includes('🌕') || reason.includes('🌖') || reason.includes('🌗') || reason.includes('🌘') ? '' : '○'}</span>
                                         <span className="leading-relaxed">{reason.replace(/^[✓✗○]\s*/, '')}</span>
                                     </div>
@@ -643,15 +660,15 @@ const App = () => {
                             {/* Entry & Targets Section */}
                             {analysis.trade_levels && (
                                 <div className="accent-gradient rounded-2xl p-6 mb-4 smooth-shadow">
-                                    <div className="text-center pb-4 border-b border-white/20">
-                                        <div className="text-xs text-white/70 uppercase tracking-wider mb-2 font-bold">Optimal Entry</div>
-                                        <div className="text-5xl font-black text-white drop-shadow-lg">
+                                    <div className="text-center pb-4 border-b border-border">
+                                        <div className="text-xs text-primary/70 uppercase tracking-wider mb-2 font-bold">Optimal Entry</div>
+                                        <div className="text-5xl font-black text-primary drop-shadow-lg">
                                             ${analysis.trade_levels.entry}
                                         </div>
-                                        <div className="text-xs text-white/60 mt-2">Dynamic AI-Adjusted Price</div>
+                                        <div className="text-xs text-primary/60 mt-2">Dynamic AI-Adjusted Price</div>
                                     </div>
                                     <div className="flex justify-between items-center text-sm py-1">
-                                        <span className="text-slate-400 flex items-center gap-1">
+                                        <span className="text-secondary flex items-center gap-1">
                                             <span className="w-2 h-2 bg-red-500 rounded-full"></span>
                                             Stop Loss
                                         </span>
@@ -659,28 +676,28 @@ const App = () => {
                                     </div>
                                     {analysis.trade_levels.targets.map((target, idx) => (
                                         <div key={idx} className="flex justify-between items-center text-sm py-1">
-                                            <span className="text-slate-400 flex items-center gap-1">
+                                            <span className="text-secondary flex items-center gap-1">
                                                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                                                 {target.level} <span className="text-xs text-slate-500">({target.rr})</span>
                                             </span>
                                             <span className="text-green-400 font-bold">${target.price.toFixed(2)}</span>
                                         </div>
                                     ))}
-                                    <div className="flex justify-between items-center pt-3 border-t border-white/10 text-sm">
-                                        <span className="text-slate-400 font-semibold">Risk per Trade</span>
+                                    <div className="flex justify-between items-center pt-3 border-t border-border text-sm">
+                                        <span className="text-secondary font-semibold">Risk per Trade</span>
                                         <span className="text-orange-400 font-bold text-base">${analysis.trade_levels.risk_amount}</span>
                                     </div>
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
                                 <div>
                                     <div className="text-xs text-slate-500 mb-1">RSI (14)</div>
-                                    <div className="text-lg font-bold text-white">{analysis.indicators.rsi}</div>
+                                    <div className="text-lg font-bold text-primary">{analysis.indicators.rsi}</div>
                                 </div>
                                 <div>
                                     <div className="text-xs text-slate-500 mb-1">ATR</div>
-                                    <div className="text-lg font-bold text-white">{analysis.indicators.atr}</div>
+                                    <div className="text-lg font-bold text-primary">{analysis.indicators.atr}</div>
                                 </div>
                             </div>
                         </div>
@@ -689,29 +706,29 @@ const App = () => {
                     {/* Moon Phase Card */}
                     {analysis && analysis.moon_phase && (
                         <div className="glass-card rounded-3xl p-5 fade-in-up" style={{ animationDelay: '0.2s' }}>
-                            <h3 className="text-xs font-bold mb-4 text-slate-400 uppercase tracking-wider">Lunar Strategy</h3>
+                            <h3 className="text-xs font-bold mb-4 text-secondary uppercase tracking-wider">Lunar Strategy</h3>
 
                             <div className="text-center mb-4">
                                 <div className="text-6xl mb-2">{analysis.moon_phase.emoji}</div>
-                                <div className="text-lg font-bold text-white mb-1">{analysis.moon_phase.phase_name}</div>
+                                <div className="text-lg font-bold text-primary mb-1">{analysis.moon_phase.phase_name}</div>
                                 <div className={`text-xs font-bold uppercase px-3 py-1 rounded-full inline-block ${analysis.moon_phase.bias === 'BULLISH' ? 'bg-green-500/20 text-green-400' :
                                     analysis.moon_phase.bias === 'BEARISH' ? 'bg-red-500/20 text-red-400' :
-                                        'bg-slate-500/20 text-slate-400'
+                                        'bg-slate-500/20 text-secondary'
                                     }`}>
                                     {analysis.moon_phase.bias}
                                 </div>
                             </div>
 
-                            <div className="text-sm text-slate-300 text-center mb-4 leading-relaxed">
+                            <div className="text-sm text-secondary text-center mb-4 leading-relaxed">
                                 {analysis.moon_phase.description}
                             </div>
 
-                            <div className="bg-white/5 rounded-xl p-3">
+                            <div className="bg-slate-500/10 rounded-xl p-3">
                                 <div className="flex justify-between text-xs mb-2">
                                     <span className="text-slate-500">Cycle Progress</span>
                                     <span className="text-purple-400 font-bold">{analysis.moon_phase.cycle_percentage}%</span>
                                 </div>
-                                <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                                <div className="w-full bg-slate-500/10 rounded-full h-2 overflow-hidden">
                                     <div
                                         className="h-full purple-gradient transition-all duration-500"
                                         style={{ width: `${analysis.moon_phase.cycle_percentage}% ` }}
@@ -726,8 +743,8 @@ const App = () => {
 
                     {/* Risk Calculator */}
                     {marketData && (
-                        <div className="bg-secondary/50 backdrop-blur-xl border border-white/5 rounded-2xl p-6">
-                            <h2 className="text-sm font-semibold text-slate-400 mb-4 uppercase tracking-wider flex items-center gap-2">
+                        <div className="bg-secondary/50 backdrop-blur-xl border border-border rounded-2xl p-6">
+                            <h2 className="text-sm font-semibold text-secondary mb-4 uppercase tracking-wider flex items-center gap-2">
                                 <i data-lucide="shield" className="w-4 h-4"></i>
                                 Risk Management
                             </h2>
@@ -741,7 +758,7 @@ const App = () => {
                                             type="number"
                                             value={accountBalance}
                                             onChange={(e) => setAccountBalance(Number(e.target.value))}
-                                            className="w-full bg-slate-900/50 border border-white/10 rounded-lg pl-8 pr-4 py-2 text-sm text-white"
+                                            className="w-full bg-input-bg border border-border rounded-lg pl-8 pr-4 py-2 text-sm text-primary"
                                         />
                                     </div>
                                 </div>
@@ -753,7 +770,7 @@ const App = () => {
                                             type="number"
                                             value={riskPercent}
                                             onChange={(e) => setRiskPercent(Number(e.target.value))}
-                                            className="w-full bg-slate-900/50 border border-white/10 rounded-lg px-4 py-2 text-sm text-white"
+                                            className="w-full bg-input-bg border border-border rounded-lg px-4 py-2 text-sm text-primary"
                                         />
                                     </div>
                                     <div>
@@ -762,22 +779,22 @@ const App = () => {
                                             type="number"
                                             value={stopLoss}
                                             onChange={(e) => setStopLoss(Number(e.target.value))}
-                                            className="w-full bg-slate-900/50 border border-white/10 rounded-lg px-4 py-2 text-sm text-white"
+                                            className="w-full bg-input-bg border border-border rounded-lg px-4 py-2 text-sm text-primary"
                                         />
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-800/50 rounded-lg p-4 mt-4 space-y-2">
+                                <div className="bg-input-bg rounded-lg p-4 mt-4 space-y-2">
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-slate-400">Position Size</span>
-                                        <span className="text-white font-bold">{positionSize} shares</span>
+                                        <span className="text-secondary">Position Size</span>
+                                        <span className="text-primary font-bold">{positionSize} shares</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-slate-400">Total Value</span>
-                                        <span className="text-white">${positionValue.toLocaleString()}</span>
+                                        <span className="text-secondary">Total Value</span>
+                                        <span className="text-primary">${positionValue.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-slate-400">Risk Amount</span>
+                                        <span className="text-secondary">Risk Amount</span>
                                         <span className="text-red-400">-${riskAmount.toFixed(2)}</span>
                                     </div>
                                 </div>
@@ -792,11 +809,11 @@ const App = () => {
                     {/* Chart */}
                     <div className="glass-card rounded-3xl p-6 fade-in-up" style={{ animationDelay: '0.2s' }}>
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Price Chart</h3>
+                            <h3 className="text-xs font-bold text-secondary uppercase tracking-wider">Price Chart</h3>
                             {marketData && (
                                 <div className="flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full bg-green-400 pulse"></div>
-                                    <span className="text-xs text-slate-400">Live Data</span>
+                                    <span className="text-xs text-secondary">Live Data</span>
                                 </div>
                             )}
                         </div>
@@ -807,20 +824,20 @@ const App = () => {
                                     <div className="w-20 h-20 mx-auto mb-6 rounded-2xl purple-gradient flex items-center justify-center">
                                         <i data-lucide="bar-chart-3" className="w-10 h-10" style={{ color: 'white' }}></i>
                                     </div>
-                                    <h3 className="text-2xl font-bold text-white mb-3">Start Your Analysis</h3>
-                                    <p className="text-slate-400 text-sm mb-6">Search for any stock, crypto, or forex pair to view advanced technical analysis with Smart Money Concepts</p>
+                                    <h3 className="text-2xl font-bold text-primary mb-3">Start Your Analysis</h3>
+                                    <p className="text-secondary text-sm mb-6">Search for any stock, crypto, or forex pair to view advanced technical analysis with Smart Money Concepts</p>
 
                                     <div className="flex flex-wrap gap-2 justify-center">
-                                        <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-slate-400">
+                                        <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-secondary">
                                             <span className="text-green-400 font-bold">📈</span> Stocks
                                         </div>
-                                        <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-slate-400">
+                                        <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-secondary">
                                             <span className="text-yellow-400 font-bold">₿</span> Crypto
                                         </div>
-                                        <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-slate-400">
+                                        <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-secondary">
                                             <span className="text-blue-400 font-bold">💱</span> Forex
                                         </div>
-                                        <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-slate-400">
+                                        <div className="px-3 py-1.5 rounded-lg dark-card text-xs text-secondary">
                                             <span className="text-purple-400 font-bold">🌙</span> Moon Phase
                                         </div>
                                     </div>
@@ -834,18 +851,18 @@ const App = () => {
                     {/* Market Insights Panel */}
                     {marketData && analysis && (
                         <div className="glass-card rounded-3xl p-6 fade-in-up" style={{ animationDelay: '0.3s' }}>
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Market Insights</h3>
+                            <h3 className="text-xs font-bold text-secondary uppercase tracking-wider mb-4">Market Insights</h3>
 
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div className="dark-card rounded-2xl p-4">
                                     <div className="text-xs text-slate-500 mb-1">Order Blocks</div>
-                                    <div className="text-2xl font-bold text-white">{analysis.smc?.order_blocks?.length || 0}</div>
-                                    <div className="text-xs text-slate-400 mt-1">Detected</div>
+                                    <div className="text-2xl font-bold text-primary">{analysis.smc?.order_blocks?.length || 0}</div>
+                                    <div className="text-xs text-secondary mt-1">Detected</div>
                                 </div>
                                 <div className="dark-card rounded-2xl p-4">
                                     <div className="text-xs text-slate-500 mb-1">Fair Value Gaps</div>
-                                    <div className="text-2xl font-bold text-white">{analysis.smc?.fvgs?.length || 0}</div>
-                                    <div className="text-xs text-slate-400 mt-1">Identified</div>
+                                    <div className="text-2xl font-bold text-primary">{analysis.smc?.fvgs?.length || 0}</div>
+                                    <div className="text-xs text-secondary mt-1">Identified</div>
                                 </div>
                             </div>
 
@@ -853,7 +870,7 @@ const App = () => {
                                 <div className="dark-card rounded-2xl p-4">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-xs text-slate-500">EMA Trend</span>
-                                        <span className={`text-sm font-bold ${analysis.ema_trend === 'BULLISH' ? 'text-green-400' : analysis.ema_trend === 'BEARISH' ? 'text-red-400' : 'text-slate-300'}`}>
+                                        <span className={`text-sm font-bold ${analysis.ema_trend === 'BULLISH' ? 'text-green-400' : analysis.ema_trend === 'BEARISH' ? 'text-red-400' : 'text-secondary'}`}>
                                             {analysis.ema_trend}
                                         </span>
                                     </div>
@@ -862,7 +879,7 @@ const App = () => {
                                 <div className="dark-card rounded-2xl p-4">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-xs text-slate-500">RSI</span>
-                                        <span className={`text-sm font-bold ${analysis.rsi > 70 ? 'text-red-400' : analysis.rsi < 30 ? 'text-green-400' : 'text-white'}`}>
+                                        <span className={`text-sm font-bold ${analysis.rsi > 70 ? 'text-red-400' : analysis.rsi < 30 ? 'text-green-400' : 'text-primary'}`}>
                                             {analysis.rsi?.toFixed(1)}
                                         </span>
                                     </div>
@@ -876,7 +893,7 @@ const App = () => {
 
                                 <div className="dark-card rounded-2xl p-4">
                                     <div className="text-xs text-slate-500 mb-2">Timeframe</div>
-                                    <div className="text-sm font-bold text-white">{timeframe}</div>
+                                    <div className="text-sm font-bold text-primary">{timeframe}</div>
                                 </div>
                             </div>
                         </div>
@@ -885,7 +902,7 @@ const App = () => {
                     {/* SMC Details Panel (Order Blocks & FVGs) */}
                     {marketData && analysis && (
                         <div className="glass-card rounded-3xl p-6 fade-in-up" style={{ animationDelay: '0.4s' }}>
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Smart Money Concepts</h3>
+                            <h3 className="text-xs font-bold text-secondary uppercase tracking-wider mb-4">Smart Money Concepts</h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Order Blocks */}
@@ -898,7 +915,7 @@ const App = () => {
                                                     <span className={`font-semibold ${ob.type === 'bullish' ? 'text-green-400' : 'text-red-400'}`}>
                                                         {ob.type.toUpperCase()}
                                                     </span>
-                                                    <span className="text-slate-300">{currency}{ob.price.toFixed(2)}</span>
+                                                    <span className="text-secondary">{currency}{ob.price.toFixed(2)}</span>
                                                 </div>
                                             ))
                                         ) : (
@@ -917,7 +934,7 @@ const App = () => {
                                                     <span className={`font-semibold ${fvg.type === 'bullish' ? 'text-green-400' : 'text-red-400'}`}>
                                                         {fvg.type.toUpperCase()}
                                                     </span>
-                                                    <span className="text-slate-300 text-xs">{currency}{fvg.bottom.toFixed(2)} - {currency}{fvg.top.toFixed(2)}</span>
+                                                    <span className="text-secondary text-xs">{currency}{fvg.bottom.toFixed(2)} - {currency}{fvg.top.toFixed(2)}</span>
                                                 </div>
                                             ))
                                         ) : (
@@ -930,7 +947,7 @@ const App = () => {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

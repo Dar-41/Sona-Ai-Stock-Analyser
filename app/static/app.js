@@ -2,6 +2,46 @@ const { useState, useEffect, useRef, useMemo } = React;
 const { createChart } = LightweightCharts;
 // Icons are handled via data-lucide attributes and lucide.createIcons()
 
+// Helper Component for TradingView Heatmap
+const TradingViewHeatmap = ({ theme }) => {
+    const container = useRef();
+
+    useEffect(() => {
+        if (!container.current) return;
+
+        // Clean up previous script if any (though React usually handles re-renders, script injection manual needs care)
+        container.current.innerHTML = "";
+
+        const script = document.createElement("script");
+        script.src = "https://s3.tradingview.com/external-embedding/embed-widget-stock-heatmap.js";
+        script.type = "text/javascript";
+        script.async = true;
+        script.innerHTML = JSON.stringify({
+            "exchanges": [],
+            "dataSource": "S&P500",
+            "grouping": "sector",
+            "blockSize": "market_cap_basic",
+            "blockColor": "change",
+            "locale": "en",
+            "symbolUrl": "",
+            "colorTheme": theme === 'dark' ? "dark" : "light",
+            "hasTopBar": true,
+            "isDataSetEnabled": true,
+            "isZoomEnabled": true,
+            "hasSymbolTooltip": true,
+            "width": "100%",
+            "height": "100%"
+        });
+        container.current.appendChild(script);
+    }, [theme]); // Re-render if theme changes
+
+    return (
+        <div className="tradingview-widget-container h-full w-full" ref={container}>
+            <div className="tradingview-widget-container__widget h-full w-full"></div>
+        </div>
+    );
+};
+
 const App = () => {
     const [status, setStatus] = useState('System Ready');
     const [theme, setTheme] = useState('light'); // Default to light
@@ -11,12 +51,11 @@ const App = () => {
     const [analysis, setAnalysis] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [filteredSuggestions, setFilteredSuggestions] = useState([]);
     const [currency, setCurrency] = useState('$');
     const [showInsights, setShowInsights] = useState(false);
     const [insightResults, setInsightResults] = useState(null);
     const [insightLoading, setInsightLoading] = useState(false);
+    const [showHeatmap, setShowHeatmap] = useState(false);
 
     // Risk Calculator State
     const [accountBalance, setAccountBalance] = useState(10000);
@@ -536,8 +575,38 @@ const App = () => {
                         <i data-lucide="sparkles" className="w-4 h-4"></i>
                         Insights
                     </button>
+                    <button
+                        onClick={() => setShowHeatmap(true)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${showHeatmap ? 'btn-purple' : 'btn-dark'}`}
+                    >
+                        <i data-lucide="grid" className="w-4 h-4"></i>
+                        Market Map
+                    </button>
                 </div>
             </header>
+
+            {/* Heatmap Modal */}
+            {showHeatmap && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-card w-full max-w-7xl h-[85vh] rounded-3xl shadow-2xl border border-border flex flex-col overflow-hidden">
+                        <div className="p-4 border-b border-border flex justify-between items-center bg-card z-10">
+                            <h2 className="text-lg font-bold text-primary flex items-center gap-2">
+                                <i data-lucide="grid" className="text-blue-400"></i>
+                                Global Market Heatmap
+                            </h2>
+                            <button
+                                onClick={() => setShowHeatmap(false)}
+                                className="p-2 rounded-full hover:bg-slate-500/10 text-secondary hover:text-primary transition-colors"
+                            >
+                                <i data-lucide="x" className="w-6 h-6"></i>
+                            </button>
+                        </div>
+                        <div className="flex-1 bg-slate-900 relative">
+                            <TradingViewHeatmap theme={theme} />
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Insights Modal/Overlay */}
             {showInsights && (

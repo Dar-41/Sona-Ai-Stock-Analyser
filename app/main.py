@@ -79,6 +79,17 @@ async def read_dashboard(request: Request):
             status_code=500
         )
 
+@app.get("/about", response_class=HTMLResponse)
+async def read_about(request: Request):
+    try:
+        return templates.TemplateResponse("about.html", {"request": request})
+    except Exception as e:
+        logger.error(f"Error serving about page: {e}")
+        return HTMLResponse(
+            content=f"<h1>Error loading about page</h1><p>{str(e)}</p>",
+            status_code=500
+        )
+
 from app.api import routes
 
 app.include_router(routes.router, prefix="/api")

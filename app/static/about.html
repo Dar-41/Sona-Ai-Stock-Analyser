@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Darsh Sheth | Sona AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            /* Lavender gradient background */
+            background: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 50%, #8b5cf6 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .portfolio-card {
+            background-color: #000000;
+            width: 90%;
+            max-width: 1400px;
+            min-height: 85vh;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+            padding: 40px 60px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            z-index: 10;
+        }
+
+        .logo {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+        }
+
+        .nav-links a {
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        .hero {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1fr;
+            align-items: center;
+            position: relative;
+        }
+
+        .glow-bg {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -40%);
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(109, 40, 217, 0.6) 0%, rgba(0, 0, 0, 0) 70%);
+            z-index: 1;
+            filter: blur(40px);
+        }
+
+        .left-content {
+            z-index: 2;
+            padding-left: 20px;
+        }
+
+        .small-heading {
+            color: #a78bfa;
+            font-weight: 300;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+
+        .large-heading {
+            color: #fff;
+            font-size: 4rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .social-icons {
+            margin-top: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .social-icons a {
+            color: #888;
+            font-size: 1.2rem;
+            transition: color 0.3s;
+        }
+
+        .social-icons a:hover {
+            color: #a78bfa;
+        }
+
+        .image-container {
+            z-index: 2;
+            height: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .image-container img {
+            max-height: 95%;
+            width: auto;
+            object-fit: contain;
+            filter: brightness(0.9) contrast(1.1);
+            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+        }
+
+        .right-content {
+            z-index: 2;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            justify-content: center;
+            position: relative;
+        }
+
+        .outline-text {
+            font-size: 4rem;
+            font-weight: 700;
+            line-height: 1;
+            -webkit-text-stroke: 1px #6d28d9;
+            color: transparent;
+            opacity: 0.8;
+            margin-bottom: -10px;
+        }
+
+        .resume-link {
+            position: absolute;
+            bottom: 40px;
+            right: 0;
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-transform: uppercase;
+        }
+
+        .resume-link:hover {
+            color: #fff;
+        }
+
+        @media (max-width: 1024px) {
+
+            .large-heading,
+            .outline-text {
+                font-size: 3rem;
+            }
+
+            .portfolio-card {
+                height: auto;
+                padding: 30px;
+            }
+
+            .hero {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 40px;
+            }
+
+            .image-container {
+                order: 1;
+                height: 400px;
+                margin: 20px 0;
+            }
+
+            .left-content {
+                order: 2;
+                padding: 0;
+            }
+
+            .right-content {
+                order: 3;
+                text-align: center;
+            }
+
+            .social-icons {
+                flex-direction: row;
+                justify-content: center;
+                margin-top: 30px;
+            }
+
+            .resume-link {
+                position: static;
+                justify-content: center;
+                margin-top: 30px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="portfolio-card">
+        <nav>
+            <div class="logo">DARSH</div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="#contact">Contact</a>
+            </div>
+        </nav>
+
+        <div class="hero">
+
+            <div class="left-content">
+                <div class="small-heading">Hello, I'm</div>
+                <h1 class="large-heading">Darsh<br>Sheth</h1>
+
+                <div class="social-icons">
+                    <a href="https://www.linkedin.com/in/darsh-sheth-1779bb185" target="_blank" title="LinkedIn"><i
+                            data-lucide="linkedin"></i></a>
+                    <a href="#" title="GitHub"><i data-lucide="github"></i></a>
+                    <a href="#" title="Dribbble"><i data-lucide="dribbble"></i></a>
+                    <a href="#" title="Layers"><i data-lucide="layers"></i></a>
+                </div>
+            </div>
+
+            <div class="glow-bg"></div>
+            <div class="image-container">
+                <img src="/static/creator-nobg.jpg" alt="Darsh Sheth">
+            </div>
+
+            <div class="right-content">
+                <div class="right-text-group">
+                    <div class="small-heading">Creative</div>
+                    <div class="outline-text">Developer</div>
+                    <h1 class="large-heading">& Designer</h1>
+                </div>
+
+                <a href="#" class="resume-link">
+                    Resume <i data-lucide="external-link"></i>
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+
+</body>
+
+</html>

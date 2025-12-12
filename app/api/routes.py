@@ -664,6 +664,211 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
         traceback.print_exc()
         return None
 
+def human_format(num, currency="$"):
+    """Format large numbers"""
+    if num is None: return "N/A"
+    magnitude = 0
+    while abs(num) >= 1000:
+        magnitude += 1
+        num /= 1000.0
+    return '{}{:.1f}{}'.format(currency, num, ['', 'K', 'M', 'B', 'T'][magnitude])
+
+@router.get("/insights")
+async def get_insights():
+    """
+    Scan a universe of stocks for Quality-Growth criteria.
+    Returns a ranked list of stock candidates.
+    """
+    # Curated universe of potential quality stocks (Mix of Indian & US)
+    # We restrict this list to avoid timeouts (Serverless functions usually have 10-60s timeout)
+    candidates = [
+        "TCS.NS", "RELIANCE.NS", "HDFCBANK.NS", "INFY.NS", "TITAN.NS", 
+        "ASIANPAINT.NS", "PIDILITE.NS", "NESTLEIND.NS", "HINDUNILVR.NS",
+        "AAPL", "MSFT", "GOOGL", "V", "MA", "NVDA", "JNJ", "PEP"
+    ]
+    
+    results = []
+    
+    print(f"[INSIGHTS] Starting scan for {len(candidates)} stocks...")
+    
+    for symbol in candidates:
+        try:
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+            
+            # Skip checking if info is empty
+            if not info:
+                continue
+                
+            # --- 1. Basic Info ---
+            name = info.get('longName', symbol)
+            sector = info.get('sector', 'Unknown')
+            market_cap = info.get('marketCap', 0)
+            current_price = info.get('currentPrice', info.get('regularMarketPrice', 0))
+            
+            # --- Filter: Exclude Commodities/Indices (Simple check based on sector/name) ---
+            industry = info.get('industry', '').lower()
+            if 'index' in industry or 'commodity' in industry or 'fund' in industry:
+                continue
+
+            # --- 2. Age (Years since IPO/Founding) ---
+            # yfinance doesn't always have IPO date, fallback to a default "Mature" if missing or logic
+            # heuristic: if no data, assume > 10 years for these major stocks
+            age = "N/A" # Placeholder, hard to get reliably via simple free API
+            
+            # --- 3. Promoter Holding ---
+            # 'heldPercentInsiders' is a proxy for promoter holding
+            promoter_holding = info.get('heldPercentInsiders', 0) * 100
+            
+            # --- 4. Financials (CAGR & Cash Flow) ---
+            financials = ticker.financials
+            cashflow = ticker.cashflow
+            balance_sheet = ticker.balance_sheet
+            
+            # Defaults
+            sales_cagr_5yr = 0
+            profit_cagr_5yr = 0
+            unit_sales_trend = "Flat"
+            ocf_positive_years = []
+            is_ocf_positive_3yr = False
+            avg_roc_5yr = 0
+            net_debt = 0
+            debt_to_equity = 0
+            
+            if not financials.empty and not cashflow.empty:
+                # Sales CAGR
+                try:
+                    # Get Total Revenue (usually first row or 'Total Revenue')
+                    rev_row = financials.loc['Total Revenue'] if 'Total Revenue' in financials.index else financials.iloc[0]
+                    # Sort chronological
+                    revs = rev_row.sort_index()
+                    if len(revs) >= 4: # Need at least 4-5 years
+                        # Simple CAGR: (End/Start)^(1/n) - 1
+                        start_rev = revs.iloc[0]
+                        end_rev = revs.iloc[-1]
+                        years = len(revs) - 1
+                        if start_rev > 0:
+                            sales_cagr_5yr = ((end_rev / start_rev) ** (1/years) - 1) * 100
+                            
+                        # Trend heuristic
+                        if sales_cagr_5yr > 10: unit_sales_trend = f"Rising (+{sales_cagr_5yr:.1f}%)"
+                        elif sales_cagr_5yr < -5: unit_sales_trend = f"Falling ({sales_cagr_5yr:.1f}%)"
+                        else: unit_sales_trend = "Flat"
+                except Exception:
+                    pass
+
+                # Profit CAGR
+                try:
+                    ni_row = financials.loc['Net Income'] if 'Net Income' in financials.index else financials.iloc[-1] # Fallback
+                    nis = ni_row.sort_index()
+                    if len(nis) >= 4:
+                        start_ni = nis.iloc[0]
+                        end_ni = nis.iloc[-1]
+                        years = len(nis) - 1
+                        if start_ni > 0: # CAGR meaningless if start is negative
+                            profit_cagr_5yr = ((end_ni / start_ni) ** (1/years) - 1) * 100
+                except Exception:
+                    pass
+                
+                # Cash Flow Check (Latest 3 years)
+                try:
+                    ocf_row = cashflow.loc['Operating Cash Flow'] if 'Operating Cash Flow' in cashflow.index else cashflow.iloc[0] # Approx
+                    # Get last 3 years
+                    recent_ocf = ocf_row.iloc[:3] # cashflow cols are usually descending date (newest first)
+                    ocf_positive_years = [v > 0 for v in recent_ocf]
+                    is_ocf_positive_3yr = all(ocf_positive_years) and len(ocf_positive_years) >= 2
+                except Exception:
+                    pass
+
+                # ROC / ROE (Average 5yr)
+                # Proxy: Return on Equity
+                avg_roc_5yr = info.get('returnOnEquity', 0) * 100 # Current ROE as proxy if historical missing
+            
+            # Debt
+            try:
+                total_debt = info.get('totalDebt', 0)
+                cash = info.get('totalCash', 0)
+                net_debt = total_debt - cash
+                debt_to_equity = info.get('debtToEquity', 0)
+            except Exception:
+                pass
+                
+            # --- 5. Management Integrity Note (Generative/Heuristic) ---
+            integrity_note = "Management demonstrates consistent execution."
+            if profit_cagr_5yr > 15 and is_ocf_positive_3yr:
+                integrity_note = "Strong capital allocation and consistent cash generation."
+            elif debt_to_equity > 100:
+                integrity_note = "Aggressive leverage structure requires monitoring."
+            elif profit_cagr_5yr < 0:
+                integrity_note = "Navigating through challenging growth environment."
+
+            # --- 6. Scoring ---
+            # Weights: Promoter 15, Sales 20, Profit 20, ROC 25, CashFlow 20
+            score = 0
+            
+            # Promoter (Using Insider % as proxy)
+            # More skin in the game is usually better, but US stocks (AAPL) have low insider holding.
+            # We adjust logic: For Indian stocks (.NS), expect > 30%. For US, relax it.
+            if ".NS" in symbol:
+                if promoter_holding > 50: score += 15
+                elif promoter_holding > 30: score += 10
+                else: score += 5
+            else:
+                score += 15 # Give full points for US blue chips on 'structure' usually
+            
+            # Sales CAGR
+            if sales_cagr_5yr > 15: score += 20
+            elif sales_cagr_5yr > 8: score += 15
+            elif sales_cagr_5yr > 0: score += 10
+            
+            # Profit CAGR
+            if profit_cagr_5yr > 15: score += 20
+            elif profit_cagr_5yr > 10: score += 15
+            elif profit_cagr_5yr > 0: score += 10
+            
+            # ROC (Using ROE proxy)
+            if avg_roc_5yr > 20: score += 25
+            elif avg_roc_5yr > 15: score += 20
+            elif avg_roc_5yr > 10: score += 10
+            
+            # Cash Flow
+            if is_ocf_positive_3yr: score += 20
+            elif len([x for x in ocf_positive_years if x]) >= 1: score += 10
+            
+            # Currency formatting
+            currency = "₹" if ".NS" in symbol else "$"
+            
+            # Construct Result Object
+            stock_data = {
+                "ticker": symbol.replace(".NS", ""),
+                "currency": currency,
+                "name": name,
+                "sector": sector,
+                "age": age,
+                "promoter_holding": round(promoter_holding, 2),
+                "integrity_note": integrity_note,
+                "sales_cagr_5yr": round(sales_cagr_5yr, 2),
+                "unit_sales_trend": unit_sales_trend,
+                "profit_cagr_5yr": round(profit_cagr_5yr, 2),
+                "net_debt": human_format(net_debt, currency),
+                "debt_to_equity": round(debt_to_equity, 2),
+                "ocf_positive_3yr": is_ocf_positive_3yr,
+                "avg_roc_5yr": round(avg_roc_5yr, 2),
+                "market_cap": human_format(market_cap, currency),
+                "last_price": round(current_price, 2),
+                "score": score
+            }
+            results.append(stock_data)
+
+        except Exception as e:
+            print(f"[INSIGHTS] Error processing {symbol}: {e}")
+            continue
+
+    # Sort by Score (Desc)
+    results.sort(key=lambda x: x['score'], reverse=True)
+    
+    return JSONResponse(content={"data": results})
+
 @router.post("/analyze")
 async def analyze_chart(file: UploadFile = File(...)):
     """Analyze uploaded chart image - OCR is optional, manual entry is fallback"""

@@ -14,6 +14,9 @@ const App = () => {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [filteredSuggestions, setFilteredSuggestions] = useState([]);
     const [currency, setCurrency] = useState('$');
+    const [showInsights, setShowInsights] = useState(false);
+    const [insightResults, setInsightResults] = useState(null);
+    const [insightLoading, setInsightLoading] = useState(false);
 
     // Risk Calculator State
     const [accountBalance, setAccountBalance] = useState(10000);
@@ -401,6 +404,31 @@ const App = () => {
         }
     };
 
+    // Fetch Insights
+    const handleInsights = async () => {
+        setShowInsights(true);
+        if (insightResults) return; // Don't refetch if already loaded
+
+        setInsightLoading(true);
+        setStatus("Scanning Quality Universe...");
+
+        try {
+            const response = await fetch('/api/insights');
+            if (response.ok) {
+                const data = await response.json();
+                setInsightResults(data.data);
+                setStatus("Insights Generated");
+            } else {
+                setStatus("Failed to generate insights");
+            }
+        } catch (e) {
+            console.error(e);
+            setStatus("Error fetching insights");
+        } finally {
+            setInsightLoading(false);
+        }
+    };
+
     // Timeframe change handler
     const handleTimeframeChange = async (newTf) => {
         setTimeframe(newTf);
@@ -501,8 +529,134 @@ const App = () => {
                     >
                         <i data-lucide={theme === 'dark' ? 'sun' : 'moon'} className="w-5 h-5 text-secondary"></i>
                     </button>
+                    <button
+                        onClick={handleInsights}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${showInsights ? 'btn-purple' : 'btn-dark'}`}
+                    >
+                        <i data-lucide="sparkles" className="w-4 h-4"></i>
+                        Insights
+                    </button>
                 </div>
             </header>
+
+            {/* Insights Modal/Overlay */}
+            {showInsights && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-card w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl border border-border flex flex-col">
+                        {/* Modal Header */}
+                        <div className="p-6 border-b border-border flex justify-between items-center sticky top-0 bg-card z-10 backdrop-blur-xl">
+                            <div>
+                                <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+                                    <i data-lucide="sparkles" className="text-purple-400"></i>
+                                    Quality-Growth Scanner
+                                </h2>
+                                <p className="text-sm text-secondary">Filtering for high-quality stocks with consistent growth</p>
+                            </div>
+                            <button
+                                onClick={() => setShowInsights(false)}
+                                className="p-2 rounded-full hover:bg-slate-500/10 text-secondary hover:text-primary transition-colors"
+                            >
+                                <i data-lucide="x" className="w-6 h-6"></i>
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-6">
+                            {insightLoading ? (
+                                <div className="flex flex-col items-center justify-center py-20">
+                                    <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mb-6"></div>
+                                    <h3 className="text-lg font-bold text-primary animate-pulse">Scanning Market Universe...</h3>
+                                    <p className="text-sm text-secondary mt-2">Analyzing Financials, CAGRs, and Management Quality</p>
+                                </div>
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead>
+                                            <tr className="border-b border-border text-xs text-secondary uppercase tracking-wider">
+                                                <th className="px-4 py-3 font-bold">Rank</th>
+                                                <th className="px-4 py-3 font-bold">Stock</th>
+                                                <th className="px-4 py-3 font-bold">Score</th>
+                                                <th className="px-4 py-3 font-bold text-right">Last Price</th>
+                                                <th className="px-4 py-3 font-bold">Promoter %</th>
+                                                <th className="px-4 py-3 font-bold">Sales 5Y</th>
+                                                <th className="px-4 py-3 font-bold">Profit 5Y</th>
+                                                <th className="px-4 py-3 font-bold">ROC (Avg)</th>
+                                                <th className="px-4 py-3 font-bold">Cash Flow</th>
+                                                <th className="px-4 py-3 font-bold">Management Note</th>
+                                                <th className="px-4 py-3 font-bold">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-border">
+                                            {insightResults?.map((stock, idx) => (
+                                                <tr key={stock.ticker} className="hover:bg-slate-500/5 transition-colors">
+                                                    <td className="px-4 py-4 font-bold text-purple-400">#{idx + 1}</td>
+                                                    <td className="px-4 py-4">
+                                                        <div className="font-bold text-primary">{stock.ticker}</div>
+                                                        <div className="text-xs text-secondary">{stock.name}</div>
+                                                        <div className="text-[10px] text-slate-500 mt-0.5">{stock.sector}</div>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <div className="font-black text-lg text-primary">{stock.score}</div>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-right font-mono text-primary font-bold">
+                                                        {stock.currency}{stock.last_price}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-secondary">
+                                                        {stock.promoter_holding}%
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <div className={`font-bold ${stock.sales_cagr_5yr > 10 ? 'text-green-400' : 'text-secondary'}`}>
+                                                            {stock.sales_cagr_5yr}%
+                                                        </div>
+                                                        <div className="text-[10px] text-slate-500">{stock.unit_sales_trend}</div>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <div className={`font-bold ${stock.profit_cagr_5yr > 10 ? 'text-green-400' : 'text-secondary'}`}>
+                                                            {stock.profit_cagr_5yr}%
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-4 text-secondary">
+                                                        {stock.avg_roc_5yr}%
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        {stock.ocf_positive_3yr ? (
+                                                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-500/10 text-green-400 text-xs font-bold">
+                                                                <i data-lucide="check-circle" className="w-3 h-3"></i> Positive
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-500/10 text-red-400 text-xs font-bold">
+                                                                Mixed
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-4 text-xs text-secondary max-w-xs leading-relaxed">
+                                                        {stock.integrity_note}
+                                                        <div className="mt-1 text-[10px] text-slate-500">
+                                                            D/E: {stock.debt_to_equity} • Net Debt: {stock.net_debt}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-4">
+                                                        <button
+                                                            onClick={() => {
+                                                                setTicker(stock.ticker);
+                                                                handleManualSearch({ preventDefault: () => { } });
+                                                                setShowInsights(false);
+                                                            }}
+                                                            className="px-3 py-1.5 rounded-lg bg-secondary/10 hover:bg-purple-500 hover:text-white text-secondary text-xs uppercase font-bold transition-all"
+                                                        >
+                                                            Analyze
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 

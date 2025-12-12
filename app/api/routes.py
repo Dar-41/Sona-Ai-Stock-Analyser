@@ -682,9 +682,20 @@ async def get_insights():
     # Curated universe of potential quality stocks (Mix of Indian & US)
     # We restrict this list to avoid timeouts (Serverless functions usually have 10-60s timeout)
     candidates = [
-        "TCS.NS", "RELIANCE.NS", "HDFCBANK.NS", "INFY.NS", "TITAN.NS", 
-        "ASIANPAINT.NS", "PIDILITE.NS", "NESTLEIND.NS", "HINDUNILVR.NS",
-        "AAPL", "MSFT", "GOOGL", "V", "MA", "NVDA", "JNJ", "PEP"
+        # --- NIFTY 50 (Indian Market Leaders) ---
+        "RELIANCE.NS", "TCS.NS", "HDFCBANK.NS", "ICICIBANK.NS", "INFY.NS", 
+        "HINDUNILVR.NS", "ITC.NS", "SBIN.NS", "BHARTIARTL.NS", "LT.NS", 
+        "KOTAKBANK.NS", "AXISBANK.NS", "BAJFINANCE.NS", "ASIANPAINT.NS", "MARUTI.NS", 
+        "HCLTECH.NS", "TITAN.NS", "SUNPHARMA.NS", "NESTLEIND.NS", "TATAMOTORS.NS", 
+        "NTPC.NS", "ULTRACEMCO.NS", "POWERGRID.NS", "ONGC.NS", "TATASTEEL.NS", 
+        "JSWSTEEL.NS", "ADANIENT.NS", "ADANIPORTS.NS", "GRASIM.NS", "COALINDIA.NS", 
+        "BAJAJFINSV.NS", "BRITANNIA.NS", "TECHM.NS", "HINDALCO.NS", "WIPRO.NS", 
+        "M&M.NS", "CIPLA.NS", "DRREDDY.NS", "APOLLOHOSP.NS", "EICHERMOT.NS", 
+        "DIVISLAB.NS", "HEROMOTOCO.NS", "TATACONSUM.NS", "SBILIFE.NS",
+        "PIDILITE.NS", "BEL.NS", "HAL.NS", "TRENT.NS", "ZOMATO.NS", "JIOFIN.NS",
+
+        # --- US Tech Giants ---
+        "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "TSLA", "META", "NFLX"
     ]
     
     results = []

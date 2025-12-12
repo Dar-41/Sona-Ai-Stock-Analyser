@@ -487,91 +487,153 @@
                     <div
                         class="absolute -bottom-10 left-10 w-40 h-40 bg-pink-500 rounded-full mix-blend-screen filter blur-3xl opacity-20">
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-                    <!-- 3D Background Script -->
-                    <script>
-                        // Initialize Lucide Icons
-                        lucide.createIcons();
+    <!-- About Section - Poster Style (Animated) -->
+    <section id="about"
+        class="relative py-24 md:py-32 bg-[#f0f0f0] overflow-hidden flex items-center justify-center min-h-[70vh] opacity-0 translate-y-10 transition-all duration-1000 ease-out"
+        data-animate-on-scroll>
 
-                        // GSAP Animations
-                        gsap.from(".fade-in", {
-                            y: 50,
-                            opacity: 0,
-                            duration: 1,
-                            stagger: 0.2,
-                            ease: "power3.out"
-                        });
+        <!-- Google Font -->
+        <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
 
-                        // Three.js Scene
-                        const scene = new THREE.Scene();
-                        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-                        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        <div class="relative w-full max-w-[1400px] mx-auto px-4 h-full flex flex-col items-center justify-center">
 
-                        renderer.setSize(window.innerWidth, window.innerHeight);
-                        document.body.appendChild(renderer.domElement);
+            <!-- Top Left Label -->
+            <div
+                class="absolute top-0 left-4 md:left-10 text-slate-800 font-bold tracking-widest text-xs md:text-sm uppercase z-20">
+                Sona AI - Creator
+            </div>
 
-                        // Particles
-                        const particlesGeometry = new THREE.BufferGeometry();
-                        const particlesCount = 2000;
-                        const posArray = new Float32Array(particlesCount * 3);
+            <!-- Main Content -->
+            <div class="relative flex items-center justify-center w-full mt-8 md:mt-0">
+                <!-- Background Big Text (Responsive Sizing) -->
+                <h1
+                    class="font-['Permanent_Marker'] text-[16vw] leading-[0.8] text-[#d91e1e] text-center z-10 select-none transform -rotate-2 mix-blend-multiply w-full relative drop-shadow-sm tracking-tighter">
+                    DARSH SHETH
+                </h1>
 
-                        for (let i = 0; i < particlesCount * 3; i++) {
-                            posArray[i] = (Math.random() - 0.5) * 15;
-                        }
+                <!-- Creator Image -->
+                <div class="absolute bottom-[-10%] z-20 w-[40vw] max-w-[450px] min-w-[280px]">
+                    <img src="/static/creator-nobg.jpg" alt="Darsh Sheth"
+                        class="w-full h-auto object-cover filter contrast-125 brightness-95 grayscale-[10%] drop-shadow-2xl">
+                </div>
+            </div>
 
-                        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            <!-- Bottom Right Label -->
+            <div
+                class="absolute bottom-4 right-4 md:right-10 text-slate-800 font-bold tracking-widest text-sm md:text-base uppercase z-20">
+                Zenmaster, CEO
+            </div>
 
-                        const material = new THREE.PointsMaterial({
-                            size: 0.02,
-                            color: 0x8b5cf6,
-                            transparent: true,
-                            opacity: 0.8,
-                        });
+        </div>
+    </section>
 
-                        const particlesMesh = new THREE.Points(particlesGeometry, material);
-                        scene.add(particlesMesh);
+    <!-- Scroll Animation Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.remove('opacity-0', 'translate-y-10');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.2 });
 
-                        // Lighting
-                        const pointLight = new THREE.PointLight(0xffffff, 0.1);
-                        pointLight.position.x = 2;
-                        pointLight.position.y = 3;
-                        pointLight.position.z = 4;
-                        scene.add(pointLight);
+            document.querySelectorAll('[data-animate-on-scroll]').forEach((el) => {
+                observer.observe(el);
+            });
+        });
+    </script>
 
-                        camera.position.z = 3;
+    <!-- 3D Background Script -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
 
-                        // Mouse Interaction
-                        let mouseX = 0;
-                        let mouseY = 0;
+        // GSAP Animations
+        gsap.from(".fade-in", {
+            y: 50,
+            opacity: 0,
+            duration: 1,
+            stagger: 0.2,
+            ease: "power3.out"
+        });
 
-                        document.addEventListener('mousemove', (event) => {
-                            mouseX = event.clientX / window.innerWidth - 0.5;
-                            mouseY = event.clientY / window.innerHeight - 0.5;
-                        });
+        // Three.js Scene
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
 
-                        // Animation Loop
-                        const clock = new THREE.Clock();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-                        function animate() {
-                            requestAnimationFrame(animate);
-                            const elapsedTime = clock.getElapsedTime();
+        // Particles
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 2000;
+        const posArray = new Float32Array(particlesCount * 3);
 
-                            particlesMesh.rotation.y = elapsedTime * 0.05;
-                            particlesMesh.rotation.x = mouseY * 0.5;
-                            particlesMesh.rotation.y += mouseX * 0.5;
+        for (let i = 0; i < particlesCount * 3; i++) {
+            posArray[i] = (Math.random() - 0.5) * 15;
+        }
 
-                            renderer.render(scene, camera);
-                        }
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
 
-                        animate();
+        const material = new THREE.PointsMaterial({
+            size: 0.02,
+            color: 0x8b5cf6,
+            transparent: true,
+            opacity: 0.8,
+        });
 
-                        // Resize Handler
-                        window.addEventListener('resize', () => {
-                            camera.aspect = window.innerWidth / window.innerHeight;
-                            camera.updateProjectionMatrix();
-                            renderer.setSize(window.innerWidth, window.innerHeight);
-                        });
-                    </script>
+        const particlesMesh = new THREE.Points(particlesGeometry, material);
+        scene.add(particlesMesh);
+
+        // Lighting
+        const pointLight = new THREE.PointLight(0xffffff, 0.1);
+        pointLight.position.x = 2;
+        pointLight.position.y = 3;
+        pointLight.position.z = 4;
+        scene.add(pointLight);
+
+        camera.position.z = 3;
+
+        // Mouse Interaction
+        let mouseX = 0;
+        let mouseY = 0;
+
+        document.addEventListener('mousemove', (event) => {
+            mouseX = event.clientX / window.innerWidth - 0.5;
+            mouseY = event.clientY / window.innerHeight - 0.5;
+        });
+
+        // Animation Loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            particlesMesh.rotation.y = elapsedTime * 0.05;
+            particlesMesh.rotation.x = mouseY * 0.5;
+            particlesMesh.rotation.y += mouseX * 0.5;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Resize Handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
 </body>
 
 </html>

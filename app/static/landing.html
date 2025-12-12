@@ -493,94 +493,71 @@
     </section>
 
     <!-- About Section -->
-    <section id="about" class="py-32 px-6 relative z-10">
-        <div class="max-w-7xl mx-auto">
-            <!-- Main Card Container -->
-            <div
-                class="bg-[#0f172a] rounded-[50px] p-8 md:p-24 relative overflow-hidden border border-white/5 shadow-2xl">
+    <section id="about" class="py-32 px-6 relative z-10 flex justify-center">
+        <!-- Portfolio Card Container -->
+        <div class="bg-black w-[90%] max-w-[1400px] rounded-[20px] shadow-2xl relative p-8 md:p-[60px] flex flex-col overflow-hidden border border-white/10"
+            style="min-height: 80vh;">
 
-                <!-- Background Gradient Effects -->
-                <div
-                    class="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[100px] -mr-40 -mt-40">
+            <!-- Navbar inside Card -->
+            <nav class="flex justify-between items-center mb-10 z-20 relative">
+                <div class="text-white font-bold text-xl tracking-wider">DARSH</div>
+                <div class="flex gap-10">
+                    <a href="#" class="text-slate-300 text-sm hover:text-white transition-colors">About Us</a>
+                    <a href="#" class="text-slate-300 text-sm hover:text-white transition-colors">Projects</a>
+                    <a href="#" class="text-slate-300 text-sm hover:text-white transition-colors">Contact</a>
                 </div>
-                <div
-                    class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[100px] -ml-40 -mb-40">
+            </nav>
+
+            <!-- Hero Layout -->
+            <div class="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr_1fr] items-center gap-10 relative">
+
+                <!-- Left Content -->
+                <div class="z-20 lg:pl-5 text-center lg:text-left order-2 lg:order-1">
+                    <div class="text-purple-400 font-light text-xl mb-2">Hello, I'm</div>
+                    <h1 class="text-white text-6xl md:text-[5rem] font-bold leading-[1.1] mb-12">Darsh<br>Sheth</h1>
+
+                    <div class="flex flex-col gap-6 items-center lg:items-start">
+                        <a href="https://www.linkedin.com/in/darsh-sheth-1779bb185" target="_blank"
+                            class="text-slate-300 text-xl hover:text-purple-400 transition-colors"><i
+                                data-lucide="linkedin"></i></a>
+                        <a href="#" class="text-slate-300 text-xl hover:text-purple-400 transition-colors"><i
+                                data-lucide="github"></i></a>
+                        <a href="#" class="text-slate-300 text-xl hover:text-purple-400 transition-colors"><i
+                                data-lucide="dribbble"></i></a>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center relative z-10">
-
-                    <!-- Left Content -->
-                    <div class="space-y-16">
-                        <!-- Stats Header -->
-                        <div class="flex gap-16">
-                            <div>
-                                <div class="text-3xl font-bold text-white mb-2">+5</div>
-                                <div class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">Years Exp
-                                </div>
-                            </div>
-                            <div>
-                                <div class="text-3xl font-bold text-white mb-2">Creator</div>
-                                <div class="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">Of Sona AI
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Main Typography -->
-                        <div class="relative">
-                            <!-- Foreground Text -->
-                            <div class="relative pt-10 md:pt-16">
-                                <div class="text-4xl md:text-6xl text-white font-light tracking-tight mb-2">
-                                    I'm <span class="font-bold">Darsh Sheth</span>
-                                </div>
-                                <p class="text-slate-400 mt-8 text-base md:text-lg max-w-md leading-relaxed">
-                                    A passionate developer and the mind behind Sona AI. I build intelligent systems that
-                                    bridge the gap between complex data and actionable insights.
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Social Button -->
-                        <div>
-                            <a href="https://www.linkedin.com/in/darsh-sheth-1779bb185/?originalSubdomain=in"
-                                target="_blank"
-                                class="inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-full font-bold hover:bg-slate-200 transition-all hover:scale-105 active:scale-95 group">
-                                Connect on LinkedIn
-                                <i data-lucide="linkedin" class="w-5 h-5 text-[#0077b5] fill-current"></i>
-                            </a>
-                        </div>
+                <!-- Center Image with Glow -->
+                <div class="z-10 h-full flex items-end justify-center relative order-1 lg:order-2">
+                    <!-- Glow Behind -->
+                    <div
+                        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[40%] w-[500px] h-[500px] bg-purple-600/60 rounded-full blur-[80px] -z-10">
                     </div>
 
-                    <!-- Right Image Container -->
-                    <div class="relative flex justify-center lg:justify-end">
-                        <div class="relative w-[300px] h-[300px] md:w-[400px] md:h-[400px]">
-                            <!-- Main Image Circle -->
-                            <div
-                                class="w-full h-full rounded-full overflow-hidden border border-white/10 shadow-2xl relative z-10 bg-slate-800">
-                                <img src="/static/creator.jpg" alt="Darsh Sheth" class="w-full h-full object-cover">
-                            </div>
+                    <!-- Image with Mask -->
+                    <img src="/static/creator.jpg" alt="Darsh Sheth"
+                        class="max-h-[500px] w-auto object-contain brightness-90 contrast-110"
+                        style="mask-image: linear-gradient(black 70%, transparent 100%); -webkit-mask-image: linear-gradient(black 70%, transparent 100%);">
+                </div>
 
-                            <!-- Decorative Glow Behind -->
-                            <div
-                                class="absolute inset-0 bg-gradient-to-tr from-purple-500/20 to-blue-500/20 rounded-full blur-3xl -z-10 transform scale-110">
-                            </div>
-
-                            <!-- Floating Status Badge -->
-                            <div
-                                class="absolute bottom-4 -right-4 md:bottom-10 md:-right-10 bg-[#1e293b]/90 backdrop-blur-xl border border-white/10 p-4 rounded-2xl flex items-center gap-4 shadow-xl z-20">
-                                <div
-                                    class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
-                                    <i data-lucide="code-2" class="w-5 h-5 text-green-400"></i>
-                                </div>
-                                <div class="pr-2">
-                                    <div class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-0.5">
-                                        Status</div>
-                                    <div class="text-sm font-bold text-white">Building Future</div>
-                                </div>
-                            </div>
+                <!-- Right Content -->
+                <div class="z-20 flex flex-col h-full justify-center relative text-center lg:text-left order-3">
+                    <div class="mb-10">
+                        <div class="text-purple-400 font-light text-xl mb-1">Creative</div>
+                        <!-- Outline Text Effect using Tailwind arbitrary values/style -->
+                        <div class="text-[3.5rem] md:text-[4.5rem] font-bold leading-none text-transparent mb-[-5px]"
+                            style="-webkit-text-stroke: 1px #6d28d9;">
+                            Developer
                         </div>
+                        <h1 class="text-white text-[3.5rem] md:text-[4.5rem] font-bold leading-none">& Designer</h1>
                     </div>
 
+                    <a href="#"
+                        class="lg:absolute bottom-10 right-0 text-slate-400 no-underline text-sm tracking-wider flex items-center justify-center lg:justify-start gap-3 uppercase hover:text-white transition-colors">
+                        Resume <i data-lucide="external-link" class="w-4 h-4"></i>
+                    </a>
                 </div>
+
             </div>
         </div>
     </section>

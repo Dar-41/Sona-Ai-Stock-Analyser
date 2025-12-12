@@ -307,71 +307,180 @@
     <!-- Pricing Section -->
     <section id="pricing" class="py-32 px-6 relative z-10">
         <div class="max-w-7xl mx-auto text-center">
-            <h2 class="text-4xl md:text-5xl font-bold mb-4">Simple Pricing</h2>
-            <p class="text-slate-400 text-lg mb-16">Start free, upgrade for professional power.</p>
+            <h2 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight">Pricing plans</h2>
+            <p class="text-slate-400 text-lg mb-12 max-w-xl mx-auto">Hire features that will help your company scale
+                faster.</p>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-                <!-- Free Tier -->
-                <div class="glass-panel p-8 rounded-3xl">
-                    <h3 class="text-xl font-bold mb-2">Starter</h3>
-                    <div class="text-4xl font-bold mb-6">$0<span class="text-base font-normal text-slate-400">/mo</span>
-                    </div>
-                    <ul class="text-left space-y-4 mb-8 text-slate-300">
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i>
-                            Daily Timeframe</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i>
-                            Top 50 Stocks</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i>
-                            Basic SMC Analysis</li>
-                    </ul>
-                    <a href="/dashboard"
-                        class="block w-full py-3 rounded-full border border-white/20 hover:bg-white/10 transition-colors font-semibold">Get
-                        Started</a>
-                </div>
-
-                <!-- Pro Tier (Highlighted) -->
-                <div class="glass-card p-10 rounded-3xl relative border-purple-500/50">
+            <!-- Toggle Switch -->
+            <div class="flex items-center justify-center gap-4 mb-20">
+                <span class="text-sm font-semibold text-white">Bill Monthly</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" value="" class="sr-only peer">
                     <div
-                        class="absolute top-0 left-1/2 -translate-x-1/2 -mt-4 bg-purple-600 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                        Most Popular</div>
-                    <h3 class="text-xl font-bold mb-2 text-purple-300">Pro Trader</h3>
-                    <div class="text-5xl font-bold mb-6">$29<span
-                            class="text-base font-normal text-slate-400">/mo</span></div>
-                    <ul class="text-left space-y-4 mb-8 text-slate-300">
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-400"></i>
-                            All Timeframes</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-400"></i>
-                            Global Markets (NSE/NYSE)</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-400"></i>
-                            Advanced AI Signals</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-400"></i>
-                            Moon Phase Strategy</li>
-                    </ul>
-                    <a href="/dashboard"
-                        class="block w-full py-4 rounded-full btn-primary font-bold shadow-lg shadow-purple-500/25">Start
-                        Free Trial</a>
+                        class="w-14 h-8 bg-slate-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-purple-600">
+                    </div>
+                </label>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-semibold text-slate-400">Bill Annually</span>
+                    <span class="text-[10px] font-bold text-green-400 bg-green-400/10 px-2 py-0.5 rounded-full">10%
+                        off</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Starter Tier -->
+                <div
+                    class="glass-card p-10 rounded-[32px] text-left relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 border border-white/5">
+                    <div class="relative z-10">
+                        <h3 class="text-lg font-medium text-slate-300 mb-4">Starter Plan</h3>
+                        <div class="text-6xl font-bold mb-8 tracking-tighter">Free</div>
+
+                        <a href="/dashboard"
+                            class="block w-full py-4 bg-white text-black text-center rounded-xl font-bold mb-8 hover:bg-slate-200 transition-colors">
+                            Get free plan
+                        </a>
+
+                        <p class="text-sm text-slate-400 mb-8 font-medium">Free plan for all users.</p>
+
+                        <ul class="space-y-4">
+                            <li class="flex items-center gap-3 text-slate-300 text-sm font-medium">
+                                <div
+                                    class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                                Daily Timeframe
+                            </li>
+                            <li class="flex items-center gap-3 text-slate-300 text-sm font-medium">
+                                <div
+                                    class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                                Top 50 Stocks
+                            </li>
+                            <li class="flex items-center gap-3 text-slate-300 text-sm font-medium">
+                                <div
+                                    class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                                Basic Analysis
+                            </li>
+                            <li class="flex items-center gap-3 text-slate-300 text-sm font-medium">
+                                <div
+                                    class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                                Unified Analytics
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Blob Effect -->
+                    <div
+                        class="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-purple-500/20 via-blue-500/5 to-transparent filter blur-2xl opacity-50 translate-y-10 group-hover:translate-y-5 transition-transform duration-700">
+                    </div>
+                    <div
+                        class="absolute -bottom-10 -left-10 w-40 h-40 bg-purple-600 rounded-full mix-blend-screen filter blur-3xl opacity-20">
+                    </div>
                 </div>
 
-                <!-- Enterprise Tier -->
-                <div class="glass-panel p-8 rounded-3xl">
-                    <h3 class="text-xl font-bold mb-2">Institutional</h3>
-                    <div class="text-4xl font-bold mb-6">$99<span
-                            class="text-base font-normal text-slate-400">/mo</span></div>
-                    <ul class="text-left space-y-4 mb-8 text-slate-300">
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i>
-                            API Access</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i>
-                            Custom Models</li>
-                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i>
-                            24/7 Priority Support</li>
-                    </ul>
-                    <a href="#"
-                        class="block w-full py-3 rounded-full border border-white/20 hover:bg-white/10 transition-colors font-semibold">Contact
-                        Sales</a>
+                <!-- Pro Tier -->
+                <div
+                    class="glass-card p-10 rounded-[32px] text-left relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 border border-white/10 bg-white/5">
+                    <div class="relative z-10">
+                        <h3 class="text-lg font-medium text-slate-300 mb-4">Pro Trader</h3>
+                        <div class="text-6xl font-bold mb-2 tracking-tighter">$29<span
+                                class="text-lg font-normal text-slate-400 ml-1">/month</span></div>
+
+                        <a href="/dashboard"
+                            class="block w-full py-4 bg-white text-black text-center rounded-xl font-bold mb-8 mt-6 hover:bg-slate-200 transition-colors">
+                            Get Pro plan
+                        </a>
+
+                        <p class="text-sm text-slate-400 mb-8 font-medium">Ideal for serious traders.</p>
+
+                        <ul class="space-y-4">
+                            <li class="flex items-center gap-3 text-slate-300 text-sm font-medium">
+                                <div
+                                    class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                                All Timeframes
+                            </li>
+                            <li class="flex items-center gap-3 text-slate-300 text-sm font-medium">
+                                <div
+                                    class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                                Global Markets
+                            </li>
+                            <li class="flex items-center gap-3 text-slate-300 text-sm font-medium">
+                                <div
+                                    class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                                AI Signals & SMC
+                            </li>
+                            <li class="flex items-center gap-3 text-slate-300 text-sm font-medium">
+                                <div
+                                    class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                                Moon Phase Strategy
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Blob Effect -->
+                    <div
+                        class="absolute bottom-0 right-0 w-full h-48 bg-gradient-to-t from-orange-500/20 via-purple-500/10 to-transparent filter blur-2xl opacity-60 translate-y-10 group-hover:translate-y-0 transition-transform duration-700">
+                    </div>
+                    <div
+                        class="absolute -bottom-10 -right-10 w-48 h-48 bg-orange-500 rounded-full mix-blend-screen filter blur-3xl opacity-20">
+                    </div>
+                </div>
+
+                <!-- Institutional Tier -->
+                <div
+                    class="glass-card p-10 rounded-[32px] text-left relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 border border-white/5">
+                    <div class="relative z-10">
+                        <h3 class="text-lg font-medium text-slate-300 mb-4">Institutional</h3>
+                        <div class="text-6xl font-bold mb-2 tracking-tighter">$99<span
+                                class="text-lg font-normal text-slate-400 ml-1">/month</span></div>
+
+                        <a href="#"
+                            class="block w-full py-4 bg-white text-black text-center rounded-xl font-bold mb-8 mt-6 hover:bg-slate-200 transition-colors">
+                            Contact Sales
+                        </a>
+
+                        <p class="text-sm text-slate-400 mb-8 font-medium">For funds & large scale.</p>
+
+                        <ul class="space-y-4">
+                            <li class="flex items-center gap-3 text-slate-300 text-sm font-medium">
+                                <div
+                                    class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                                Full API Access
+                            </li>
+                            <li class="flex items-center gap-3 text-slate-300 text-sm font-medium">
+                                <div
+                                    class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                                Custom Models
+                            </li>
+                            <li class="flex items-center gap-3 text-slate-300 text-sm font-medium">
+                                <div
+                                    class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                                Priority Support
+                            </li>
+                            <li class="flex items-center gap-3 text-slate-300 text-sm font-medium">
+                                <div
+                                    class="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center shrink-0">
+                                    <i data-lucide="check" class="w-3 h-3 text-white"></i></div>
+                                Dedicated Server
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Blob Effect -->
+                    <div
+                        class="absolute bottom-0 w-full h-40 bg-gradient-to-t from-green-500/20 via-blue-500/10 to-transparent filter blur-2xl opacity-50 translate-y-10 group-hover:translate-y-5 transition-transform duration-700">
+                    </div>
+                    <div
+                        class="absolute -bottom-10 left-10 w-40 h-40 bg-pink-500 rounded-full mix-blend-screen filter blur-3xl opacity-20">
+                    </div>
                 </div>
             </div>
         </div>
-
     </section>
 
     <!-- 3D Background Script -->

@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About - Darsh Sheth | Sona AI</title>
+    <title>About - Darsh Sheth | Full Stack Developer & AI Enthusiast</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
@@ -19,219 +19,335 @@
         }
 
         body {
-            /* Lavender gradient background */
-            background: linear-gradient(135deg, #c4b5fd 0%, #a78bfa 50%, #8b5cf6 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            padding: 40px 20px;
         }
 
-        .portfolio-card {
-            background-color: #000000;
-            width: 90%;
-            max-width: 1400px;
-            min-height: 85vh;
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header Card */
+        .header-card {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 60px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             position: relative;
-            padding: 40px 60px;
-            display: flex;
-            flex-direction: column;
             overflow: hidden;
         }
 
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            z-index: 10;
+        .header-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
         }
 
-        .logo {
+        .profile-section {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .profile-image {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 4px solid rgba(102, 126, 234, 0.5);
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .profile-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-info h1 {
+            font-size: 3rem;
             color: #fff;
             font-weight: 700;
-            font-size: 1.2rem;
-            letter-spacing: 2px;
+            margin-bottom: 10px;
         }
 
-        .nav-links {
+        .profile-info .tagline {
+            font-size: 1.3rem;
+            color: #a78bfa;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
+        .profile-info .bio {
+            color: #cbd5e1;
+            line-height: 1.8;
+            font-size: 1.05rem;
+            margin-bottom: 30px;
+        }
+
+        .social-links {
             display: flex;
-            gap: 40px;
+            gap: 15px;
         }
 
-        .nav-links a {
-            color: #888;
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.3s;
+        .social-links a {
+            width: 45px;
+            height: 45px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #a78bfa;
+            transition: all 0.3s;
+            border: 1px solid rgba(102, 126, 234, 0.3);
         }
 
-        .nav-links a:hover {
+        .social-links a:hover {
+            background: rgba(102, 126, 234, 0.4);
+            transform: translateY(-3px);
             color: #fff;
         }
 
-        .hero {
-            flex: 1;
+        /* Stats Section */
+        .stats-grid {
             display: grid;
-            grid-template-columns: 1fr 1.2fr 1fr;
-            align-items: center;
-            position: relative;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
         }
 
-        .glow-bg {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -40%);
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(109, 40, 217, 0.6) 0%, rgba(0, 0, 0, 0) 70%);
-            z-index: 1;
-            filter: blur(40px);
+        .stat-card {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 25px;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid rgba(102, 126, 234, 0.2);
         }
 
-        .left-content {
-            z-index: 2;
-            padding-left: 20px;
-        }
-
-        .small-heading {
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: 700;
             color: #a78bfa;
-            font-weight: 300;
-            font-size: 1.2rem;
             margin-bottom: 5px;
         }
 
-        .large-heading {
+        .stat-card .label {
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Content Cards */
+        .content-card {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 40px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .content-card h2 {
+            font-size: 2rem;
             color: #fff;
-            font-size: 4rem;
-            font-weight: 700;
-            line-height: 1.1;
-        }
-
-        .social-icons {
-            margin-top: 100px;
+            margin-bottom: 30px;
             display: flex;
-            flex-direction: column;
-            gap: 20px;
+            align-items: center;
+            gap: 15px;
         }
 
-        .social-icons a {
-            color: #888;
-            font-size: 1.2rem;
-            transition: color 0.3s;
-        }
-
-        .social-icons a:hover {
+        .content-card h2 i {
             color: #a78bfa;
         }
 
-        .image-container {
-            z-index: 2;
-            height: 100%;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
+        /* Skills Grid */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
         }
 
-        .image-container img {
-            max-height: 95%;
-            width: auto;
-            object-fit: contain;
-            filter: brightness(0.9) contrast(1.1);
-            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+        .skill-tag {
+            background: rgba(102, 126, 234, 0.15);
+            padding: 15px 20px;
+            border-radius: 15px;
+            text-align: center;
+            color: #cbd5e1;
+            font-weight: 600;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            transition: all 0.3s;
         }
 
-        .right-content {
-            z-index: 2;
-            text-align: left;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            justify-content: center;
-            position: relative;
-        }
-
-        .outline-text {
-            font-size: 4rem;
-            font-weight: 700;
-            line-height: 1;
-            -webkit-text-stroke: 1px #6d28d9;
-            color: transparent;
-            opacity: 0.8;
-            margin-bottom: -10px;
-        }
-
-        .resume-link {
-            position: absolute;
-            bottom: 40px;
-            right: 0;
-            color: #888;
-            text-decoration: none;
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-transform: uppercase;
-        }
-
-        .resume-link:hover {
+        .skill-tag:hover {
+            background: rgba(102, 126, 234, 0.3);
+            transform: translateY(-3px);
             color: #fff;
         }
 
-        @media (max-width: 1024px) {
+        /* Experience Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
 
-            .large-heading,
-            .outline-text {
-                font-size: 3rem;
-            }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, #667eea, #764ba2);
+        }
 
-            .portfolio-card {
-                height: auto;
-                padding: 30px;
-            }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 40px;
+        }
 
-            .hero {
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -46px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #a78bfa;
+            border: 3px solid rgba(0, 0, 0, 0.85);
+        }
+
+        .timeline-item h3 {
+            color: #fff;
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+
+        .timeline-item .company {
+            color: #a78bfa;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .timeline-item .date {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .timeline-item p {
+            color: #cbd5e1;
+            line-height: 1.7;
+        }
+
+        /* Projects Grid */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .project-card {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 30px;
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            transition: all 0.3s;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            background: rgba(102, 126, 234, 0.15);
+        }
+
+        .project-card h3 {
+            color: #fff;
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .project-card p {
+            color: #cbd5e1;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .project-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .project-tag {
+            background: rgba(167, 139, 250, 0.2);
+            color: #a78bfa;
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        /* Back Button */
+        .back-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            color: #fff;
+            padding: 12px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .back-btn:hover {
+            background: rgba(102, 126, 234, 0.3);
+            transform: translateX(-5px);
+        }
+
+        @media (max-width: 768px) {
+            .profile-section {
                 grid-template-columns: 1fr;
                 text-align: center;
-                gap: 40px;
             }
 
-            .image-container {
-                order: 1;
-                height: 400px;
-                margin: 20px 0;
+            .profile-image {
+                margin: 0 auto;
             }
 
-            .left-content {
-                order: 2;
-                padding: 0;
-            }
-
-            .right-content {
-                order: 3;
-                text-align: center;
-            }
-
-            .social-icons {
-                flex-direction: row;
+            .social-links {
                 justify-content: center;
-                margin-top: 30px;
             }
 
-            .resume-link {
-                position: static;
-                justify-content: center;
-                margin-top: 30px;
+            .profile-info h1 {
+                font-size: 2rem;
             }
 
-            .nav-links {
-                display: none;
+            .header-card,
+            .content-card {
+                padding: 30px 20px;
             }
         }
     </style>
@@ -239,48 +355,176 @@
 
 <body>
 
-    <div class="portfolio-card">
-        <nav>
-            <div class="logo">DARSH</div>
-            <div class="nav-links">
-                <a href="/">Home</a>
-                <a href="/dashboard">Dashboard</a>
-                <a href="#contact">Contact</a>
-            </div>
-        </nav>
+    <a href="/" class="back-btn">
+        <i data-lucide="arrow-left"></i>
+        Back to Home
+    </a>
 
-        <div class="hero">
-
-            <div class="left-content">
-                <div class="small-heading">Hello, I'm</div>
-                <h1 class="large-heading">Darsh<br>Sheth</h1>
-
-                <div class="social-icons">
-                    <a href="https://www.linkedin.com/in/darsh-sheth-1779bb185" target="_blank" title="LinkedIn"><i
-                            data-lucide="linkedin"></i></a>
-                    <a href="#" title="GitHub"><i data-lucide="github"></i></a>
-                    <a href="#" title="Dribbble"><i data-lucide="dribbble"></i></a>
-                    <a href="#" title="Layers"><i data-lucide="layers"></i></a>
+    <div class="container">
+        <!-- Header Card -->
+        <div class="header-card">
+            <div class="profile-section">
+                <div class="profile-image">
+                    <img src="/static/creator-nobg.jpg" alt="Darsh Sheth">
+                </div>
+                <div class="profile-info">
+                    <h1>Darsh Sheth</h1>
+                    <p class="tagline">Full Stack Developer & AI Enthusiast</p>
+                    <p class="bio">
+                        Passionate software engineer specializing in building intelligent systems that transform complex
+                        data into actionable insights.
+                        Creator of Sona AI Stock Analyser and advocate for clean code, innovative solutions, and
+                        continuous learning.
+                    </p>
+                    <div class="social-links">
+                        <a href="https://www.linkedin.com/in/darsh-sheth-1779bb185" target="_blank" title="LinkedIn">
+                            <i data-lucide="linkedin"></i>
+                        </a>
+                        <a href="https://github.com/Dar-41" target="_blank" title="GitHub">
+                            <i data-lucide="github"></i>
+                        </a>
+                        <a href="mailto:darsh@example.com" title="Email">
+                            <i data-lucide="mail"></i>
+                        </a>
+                        <a href="/dashboard" title="Dashboard">
+                            <i data-lucide="layout-dashboard"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            <div class="glow-bg"></div>
-            <div class="image-container">
-                <img src="/static/creator-nobg.jpg" alt="Darsh Sheth">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="number">5+</div>
+                    <div class="label">Years Experience</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">10+</div>
+                    <div class="label">Projects Delivered</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">15+</div>
+                    <div class="label">Technologies</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">100%</div>
+                    <div class="label">Dedication</div>
+                </div>
             </div>
+        </div>
 
-            <div class="right-content">
-                <div class="right-text-group">
-                    <div class="small-heading">Creative</div>
-                    <div class="outline-text">Developer</div>
-                    <h1 class="large-heading">& Designer</h1>
+        <!-- Skills Section -->
+        <div class="content-card">
+            <h2><i data-lucide="code-2"></i> Technical Skills</h2>
+            <div class="skills-grid">
+                <div class="skill-tag">Python</div>
+                <div class="skill-tag">JavaScript</div>
+                <div class="skill-tag">React</div>
+                <div class="skill-tag">FastAPI</div>
+                <div class="skill-tag">Node.js</div>
+                <div class="skill-tag">Machine Learning</div>
+                <div class="skill-tag">AI/ML</div>
+                <div class="skill-tag">Data Analysis</div>
+                <div class="skill-tag">SQL</div>
+                <div class="skill-tag">MongoDB</div>
+                <div class="skill-tag">Docker</div>
+                <div class="skill-tag">Git</div>
+                <div class="skill-tag">TailwindCSS</div>
+                <div class="skill-tag">REST APIs</div>
+                <div class="skill-tag">Cloud (Vercel)</div>
+                <div class="skill-tag">Financial Analysis</div>
+            </div>
+        </div>
+
+        <!-- Experience Section -->
+        <div class="content-card">
+            <h2><i data-lucide="briefcase"></i> Experience & Journey</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h3>Creator & Lead Developer</h3>
+                    <div class="company">Sona AI Stock Analyser</div>
+                    <div class="date">2024 - Present</div>
+                    <p>
+                        Architected and developed an institutional-grade stock analysis platform featuring AI-powered
+                        insights,
+                        Smart Money Concepts (SMC) analysis, and real-time market data visualization. Integrated
+                        advanced technical
+                        indicators, risk management calculators, and quality-growth stock scanners.
+                    </p>
                 </div>
 
-                <a href="#" class="resume-link">
-                    Resume <i data-lucide="external-link"></i>
-                </a>
-            </div>
+                <div class="timeline-item">
+                    <h3>Full Stack Developer</h3>
+                    <div class="company">Independent Projects</div>
+                    <div class="date">2020 - Present</div>
+                    <p>
+                        Developed multiple web applications using modern tech stacks including React, FastAPI, and
+                        Python.
+                        Specialized in creating data-driven applications with focus on user experience and performance
+                        optimization.
+                    </p>
+                </div>
 
+                <div class="timeline-item">
+                    <h3>Software Engineering Journey</h3>
+                    <div class="company">Continuous Learning</div>
+                    <div class="date">2019 - Present</div>
+                    <p>
+                        Committed to staying at the forefront of technology through continuous learning and hands-on
+                        project development.
+                        Focus areas include AI/ML, financial technology, and modern web development frameworks.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects Section -->
+        <div class="content-card">
+            <h2><i data-lucide="rocket"></i> Featured Projects</h2>
+            <div class="projects-grid">
+                <div class="project-card">
+                    <h3><i data-lucide="trending-up"></i> Sona AI Stock Analyser</h3>
+                    <p>
+                        Institutional-grade stock analysis platform with AI-powered insights, SMC analysis,
+                        real-time market data, and advanced technical indicators. Features include Quality-Growth
+                        Scanner,
+                        Market Heatmap, and Moon Phase trading strategies.
+                    </p>
+                    <div class="project-tags">
+                        <span class="project-tag">Python</span>
+                        <span class="project-tag">FastAPI</span>
+                        <span class="project-tag">React</span>
+                        <span class="project-tag">AI/ML</span>
+                        <span class="project-tag">TradingView</span>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <h3><i data-lucide="bar-chart-3"></i> Financial Data Pipeline</h3>
+                    <p>
+                        Built robust data pipeline integrating multiple financial data sources (Polygon.io, yfinance)
+                        with intelligent fallback mechanisms and caching strategies for optimal performance.
+                    </p>
+                    <div class="project-tags">
+                        <span class="project-tag">Python</span>
+                        <span class="project-tag">APIs</span>
+                        <span class="project-tag">Data Engineering</span>
+                    </div>
+                </div>
+
+                <div class="project-card">
+                    <h3><i data-lucide="palette"></i> Modern UI/UX Design</h3>
+                    <p>
+                        Crafted beautiful, responsive interfaces with glassmorphism effects, smooth animations,
+                        and intuitive user experiences. Focus on accessibility and performance.
+                    </p>
+                    <div class="project-tags">
+                        <span class="project-tag">React</span>
+                        <span class="project-tag">TailwindCSS</span>
+                        <span class="project-tag">UI/UX</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

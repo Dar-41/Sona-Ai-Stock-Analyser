@@ -207,6 +207,173 @@
         </div>
     </section>
 
+    <!-- Technology Section -->
+    <section id="technology" class="py-32 px-6 relative z-10">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div>
+                    <div
+                        class="inline-block mb-4 px-4 py-1.5 rounded-full glass-panel text-xs font-semibold text-blue-300 tracking-wider uppercase">
+                        Under the Hood
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-bold mb-6">Built with Modern Tech</h2>
+                    <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+                        Sona AI is engineered for speed, accuracy, and reliability. We leverage the latest web
+                        technologies and financial algorithms to deliver institutional-grade performance in your
+                        browser.
+                    </p>
+
+                    <div class="space-y-6">
+                        <!-- Tech Item 1 -->
+                        <div class="flex items-start gap-4">
+                            <div
+                                class="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center shrink-0 border border-yellow-500/20">
+                                <i data-lucide="zap" class="w-6 h-6 text-yellow-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-bold mb-1">FastAPI Backend</h4>
+                                <p class="text-slate-400 text-sm">High-performance asynchronous Python backend ensuring
+                                    millisecond-latency data processing.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tech Item 2 -->
+                        <div class="flex items-start gap-4">
+                            <div
+                                class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0 border border-blue-500/20">
+                                <i data-lucide="code" class="w-6 h-6 text-blue-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-bold mb-1">React & Tailwind</h4>
+                                <p class="text-slate-400 text-sm">A fluid, responsive interface built with React 18,
+                                    utilizing Tailwind for a beautiful, dark-mode first design.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tech Item 3 -->
+                        <div class="flex items-start gap-4">
+                            <div
+                                class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0 border border-purple-500/20">
+                                <i data-lucide="cpu" class="w-6 h-6 text-purple-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xl font-bold mb-1">AI & Algo Engine</h4>
+                                <p class="text-slate-400 text-sm">Proprietary algorithms for Smart Money Concepts (SMC)
+                                    and cyclical analysis running in real-time.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side Visual -->
+                <div
+                    class="glass-card p-1 rounded-3xl transform rotate-3 hover:rotate-0 transition-transform duration-500">
+                    <div class="bg-[#1e293b] rounded-[20px] overflow-hidden border border-white/10">
+                        <div class="flex items-center gap-2 px-4 py-3 border-b border-white/10 bg-slate-900/50">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                            <div class="ml-4 text-xs text-slate-500 font-mono">analysis_engine.py</div>
+                        </div>
+                        <div class="p-6 font-mono text-sm overflow-hidden">
+                            <div class="text-pink-400">def <span
+                                    class="text-blue-400">analyze_market_structure</span>(data):</div>
+                            <div class="pl-4 text-slate-300">
+                                <span class="text-slate-500"># Detect Order Blocks</span><br>
+                                order_blocks = detect_order_blocks(data)<br>
+                                <br>
+                                <span class="text-slate-500"># Calculated Fair Value Gaps</span><br>
+                                fvgs = find_imbalance(data)<br>
+                                <br>
+                                <span class="text-slate-500"># AI Signal Generation</span><br>
+                                signal = ai_model.predict(<br>
+                                &nbsp;&nbsp;price_action=data,<br>
+                                &nbsp;&nbsp;sentiment=news_sentiment<br>
+                                )<br>
+                                <br>
+                                <span class="text-purple-400">return</span> {<br>
+                                &nbsp;&nbsp;<span class="text-green-400">"signal"</span>: signal,<br>
+                                &nbsp;&nbsp;<span class="text-green-400">"confidence"</span>: <span
+                                    class="text-orange-400">98.5</span><br>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-32 px-6 relative z-10">
+        <div class="max-w-7xl mx-auto text-center">
+            <h2 class="text-4xl md:text-5xl font-bold mb-4">Simple Pricing</h2>
+            <p class="text-slate-400 text-lg mb-16">Start free, upgrade for professional power.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                <!-- Free Tier -->
+                <div class="glass-panel p-8 rounded-3xl">
+                    <h3 class="text-xl font-bold mb-2">Starter</h3>
+                    <div class="text-4xl font-bold mb-6">$0<span class="text-base font-normal text-slate-400">/mo</span>
+                    </div>
+                    <ul class="text-left space-y-4 mb-8 text-slate-300">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                            Daily Timeframe</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                            Top 50 Stocks</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                            Basic SMC Analysis</li>
+                    </ul>
+                    <a href="/dashboard"
+                        class="block w-full py-3 rounded-full border border-white/20 hover:bg-white/10 transition-colors font-semibold">Get
+                        Started</a>
+                </div>
+
+                <!-- Pro Tier (Highlighted) -->
+                <div class="glass-card p-10 rounded-3xl relative border-purple-500/50">
+                    <div
+                        class="absolute top-0 left-1/2 -translate-x-1/2 -mt-4 bg-purple-600 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                        Most Popular</div>
+                    <h3 class="text-xl font-bold mb-2 text-purple-300">Pro Trader</h3>
+                    <div class="text-5xl font-bold mb-6">$29<span
+                            class="text-base font-normal text-slate-400">/mo</span></div>
+                    <ul class="text-left space-y-4 mb-8 text-slate-300">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-400"></i>
+                            All Timeframes</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-400"></i>
+                            Global Markets (NSE/NYSE)</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-400"></i>
+                            Advanced AI Signals</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-400"></i>
+                            Moon Phase Strategy</li>
+                    </ul>
+                    <a href="/dashboard"
+                        class="block w-full py-4 rounded-full btn-primary font-bold shadow-lg shadow-purple-500/25">Start
+                        Free Trial</a>
+                </div>
+
+                <!-- Enterprise Tier -->
+                <div class="glass-panel p-8 rounded-3xl">
+                    <h3 class="text-xl font-bold mb-2">Institutional</h3>
+                    <div class="text-4xl font-bold mb-6">$99<span
+                            class="text-base font-normal text-slate-400">/mo</span></div>
+                    <ul class="text-left space-y-4 mb-8 text-slate-300">
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                            API Access</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                            Custom Models</li>
+                        <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i>
+                            24/7 Priority Support</li>
+                    </ul>
+                    <a href="#"
+                        class="block w-full py-3 rounded-full border border-white/20 hover:bg-white/10 transition-colors font-semibold">Contact
+                        Sales</a>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
     <!-- 3D Background Script -->
     <script>
         // Initialize Lucide Icons

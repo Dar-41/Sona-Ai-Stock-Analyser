@@ -495,66 +495,71 @@
     <!-- About Section -->
     <section id="about" class="py-32 px-6 relative z-10 flex justify-center">
         <!-- Portfolio Card Container -->
-        <div class="bg-black w-[90%] max-w-[1400px] rounded-[20px] shadow-2xl relative p-8 md:p-[60px] flex flex-col overflow-hidden border border-white/10"
-            style="min-height: 80vh;">
+        <div class="bg-black w-[90%] max-w-[1400px] rounded-[20px] shadow-2xl relative p-10 md:p-[60px] flex flex-col overflow-hidden border border-white/10"
+            style="min-height: 85vh;">
 
             <!-- Navbar inside Card -->
-            <nav class="flex justify-between items-center mb-10 z-20 relative">
-                <div class="text-white font-bold text-xl tracking-wider">DARSH</div>
-                <div class="flex gap-10">
-                    <a href="#" class="text-slate-300 text-sm hover:text-white transition-colors">About Us</a>
-                    <a href="#" class="text-slate-300 text-sm hover:text-white transition-colors">Projects</a>
-                    <a href="#" class="text-slate-300 text-sm hover:text-white transition-colors">Contact</a>
+            <nav class="flex justify-between items-center mb-5 z-20 relative">
+                <div class="text-white font-bold text-xl tracking-[2px]">DARSH</div>
+                <div class="hidden md:flex gap-10">
+                    <a href="#" class="text-slate-400 text-sm hover:text-white transition-colors">About Us</a>
+                    <a href="#" class="text-slate-400 text-sm hover:text-white transition-colors">Projects</a>
+                    <a href="#" class="text-slate-400 text-sm hover:text-white transition-colors">Contact</a>
                 </div>
             </nav>
 
             <!-- Hero Layout -->
-            <div class="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr_1fr] items-center gap-10 relative">
+            <div class="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_1.2fr_1fr] items-center gap-8 lg:gap-0 relative">
 
                 <!-- Left Content -->
-                <div class="z-20 lg:pl-5 text-center lg:text-left order-2 lg:order-1">
-                    <div class="text-purple-400 font-light text-xl mb-2">Hello, I'm</div>
-                    <h1 class="text-white text-6xl md:text-[5rem] font-bold leading-[1.1] mb-12">Darsh<br>Sheth</h1>
+                <div class="z-20 pl-0 lg:pl-5 text-center lg:text-left order-2 lg:order-1">
+                    <div class="text-purple-400 font-light text-lg md:text-xl mb-1">Hello, I'm</div>
+                    <h1 class="text-white text-5xl md:text-6xl lg:text-[4rem] font-bold leading-[1.1]">Darsh<br>Sheth
+                    </h1>
 
-                    <div class="flex flex-col gap-6 items-center lg:items-start">
+                    <div
+                        class="flex flex-row lg:flex-col gap-5 mt-16 lg:mt-24 justify-center lg:justify-start items-center lg:items-start">
                         <a href="https://www.linkedin.com/in/darsh-sheth-1779bb185" target="_blank"
-                            class="text-slate-300 text-xl hover:text-purple-400 transition-colors"><i
+                            class="text-slate-400 text-lg hover:text-purple-400 transition-colors"><i
                                 data-lucide="linkedin"></i></a>
-                        <a href="#" class="text-slate-300 text-xl hover:text-purple-400 transition-colors"><i
+                        <a href="#" class="text-slate-400 text-lg hover:text-purple-400 transition-colors"><i
                                 data-lucide="github"></i></a>
-                        <a href="#" class="text-slate-300 text-xl hover:text-purple-400 transition-colors"><i
+                        <a href="#" class="text-slate-400 text-lg hover:text-purple-400 transition-colors"><i
                                 data-lucide="dribbble"></i></a>
+                        <a href="#" class="text-slate-400 text-lg hover:text-purple-400 transition-colors"><i
+                                data-lucide="layers"></i></a>
                     </div>
                 </div>
 
                 <!-- Center Image with Glow -->
-                <div class="z-10 h-full flex items-end justify-center relative order-1 lg:order-2">
-                    <!-- Glow Behind -->
-                    <div
-                        class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[40%] w-[500px] h-[500px] bg-purple-600/60 rounded-full blur-[80px] -z-10">
+                <div
+                    class="z-10 h-full flex items-end justify-center relative order-1 lg:order-2 min-h-[400px] lg:min-h-[600px]">
+                    <!-- Radial Glow Behind -->
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[40%] w-[500px] h-[500px] rounded-full blur-[60px] opacity-60 -z-10"
+                        style="background: radial-gradient(circle, rgba(109, 40, 217, 0.6) 0%, rgba(0,0,0,0) 70%);">
                     </div>
 
-                    <!-- Image with Mask -->
-                    <img src="/static/creator.jpg" alt="Darsh Sheth"
-                        class="max-h-[500px] w-auto object-contain brightness-90 contrast-110"
-                        style="mask-image: linear-gradient(black 70%, transparent 100%); -webkit-mask-image: linear-gradient(black 70%, transparent 100%);">
+                    <!-- Image with Bottom Fade Mask -->
+                    <img src="/static/creator-nobg.jpg" alt="Darsh Sheth"
+                        class="max-h-[95%] w-auto object-contain brightness-90 contrast-110"
+                        style="mask-image: linear-gradient(to bottom, black 80%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);">
                 </div>
 
                 <!-- Right Content -->
                 <div class="z-20 flex flex-col h-full justify-center relative text-center lg:text-left order-3">
-                    <div class="mb-10">
-                        <div class="text-purple-400 font-light text-xl mb-1">Creative</div>
-                        <!-- Outline Text Effect using Tailwind arbitrary values/style -->
-                        <div class="text-[3.5rem] md:text-[4.5rem] font-bold leading-none text-transparent mb-[-5px]"
-                            style="-webkit-text-stroke: 1px #6d28d9;">
+                    <div class="mb-8 lg:mb-0">
+                        <div class="text-purple-400 font-light text-lg md:text-xl mb-1">Creative</div>
+                        <!-- Outline Text Effect -->
+                        <div class="text-5xl md:text-6xl lg:text-[4rem] font-bold leading-[1] text-transparent opacity-80 mb-[-8px]"
+                            style="-webkit-text-stroke: 1px #6d28d9; color: transparent;">
                             Developer
                         </div>
-                        <h1 class="text-white text-[3.5rem] md:text-[4.5rem] font-bold leading-none">& Designer</h1>
+                        <h1 class="text-white text-5xl md:text-6xl lg:text-[4rem] font-bold leading-[1]">& Designer</h1>
                     </div>
 
                     <a href="#"
-                        class="lg:absolute bottom-10 right-0 text-slate-400 no-underline text-sm tracking-wider flex items-center justify-center lg:justify-start gap-3 uppercase hover:text-white transition-colors">
-                        Resume <i data-lucide="external-link" class="w-4 h-4"></i>
+                        class="lg:absolute lg:bottom-10 lg:right-0 mt-8 lg:mt-0 text-slate-500 no-underline text-sm tracking-[1.5px] flex items-center justify-center lg:justify-start gap-2 uppercase hover:text-white transition-colors">
+                        Resume <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                     </a>
                 </div>
 

@@ -51,6 +51,8 @@ const App = () => {
     const [analysis, setAnalysis] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [filteredSuggestions, setFilteredSuggestions] = useState([]);
     const [currency, setCurrency] = useState('$');
     const [showInsights, setShowInsights] = useState(false);
     const [insightResults, setInsightResults] = useState(null);

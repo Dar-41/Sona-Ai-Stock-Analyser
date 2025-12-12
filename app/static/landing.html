@@ -487,140 +487,91 @@
                     <div
                         class="absolute -bottom-10 left-10 w-40 h-40 bg-pink-500 rounded-full mix-blend-screen filter blur-3xl opacity-20">
                     </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- About Section - Poster Style -->
-    <section id="about"
-        class="relative py-32 bg-[#f0f0f0] overflow-hidden flex items-center justify-center min-h-[80vh]">
+                    <!-- 3D Background Script -->
+                    <script>
+                        // Initialize Lucide Icons
+                        lucide.createIcons();
 
-        <!-- Google Font for Brush Text -->
-        <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+                        // GSAP Animations
+                        gsap.from(".fade-in", {
+                            y: 50,
+                            opacity: 0,
+                            duration: 1,
+                            stagger: 0.2,
+                            ease: "power3.out"
+                        });
 
-        <div class="relative w-full max-w-6xl mx-auto px-6 h-full flex flex-col items-center justify-center">
+                        // Three.js Scene
+                        const scene = new THREE.Scene();
+                        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
 
-            <!-- Top Left Label -->
-            <div
-                class="absolute top-0 left-6 md:left-0 text-slate-800 font-bold tracking-widest text-sm md:text-base uppercase z-20">
-                Sona AI - Creator
-            </div>
+                        renderer.setSize(window.innerWidth, window.innerHeight);
+                        document.body.appendChild(renderer.domElement);
 
-            <!-- Main Content Container -->
-            <div class="relative flex items-center justify-center w-full mt-10 md:mt-0">
+                        // Particles
+                        const particlesGeometry = new THREE.BufferGeometry();
+                        const particlesCount = 2000;
+                        const posArray = new Float32Array(particlesCount * 3);
 
-                <!-- Background Big Text -->
-                <h1
-                    class="font-['Permanent_Marker'] text-[5.5rem] md:text-[8rem] lg:text-[11rem] leading-[0.85] text-[#d91e1e] text-center z-10 select-none transform -rotate-1 mix-blend-multiply w-full relative drop-shadow-sm tracking-tighter">
-                    DARSH<br class="md:hidden"> SHETH
-                </h1>
+                        for (let i = 0; i < particlesCount * 3; i++) {
+                            posArray[i] = (Math.random() - 0.5) * 15;
+                        }
 
-                <!-- Creator Image -->
-                <div class="absolute bottom-[-50px] md:bottom-[-80px] z-20 w-[280px] md:w-[450px]">
-                    <img src="/static/creator-nobg.jpg" alt="Darsh Sheth"
-                        class="w-full h-auto object-cover filter contrast-125 brightness-95 grayscale-[10%] drop-shadow-2xl">
-                    <!-- Gradient Fade at bottom to blend if needed -->
-                    <div class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#f0f0f0] to-transparent">
-                    </div>
-                </div>
+                        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
 
-            </div>
+                        const material = new THREE.PointsMaterial({
+                            size: 0.02,
+                            color: 0x8b5cf6,
+                            transparent: true,
+                            opacity: 0.8,
+                        });
 
-            <!-- Bottom Right Label -->
-            <div
-                class="absolute bottom-10 right-6 md:right-0 text-slate-800 font-bold tracking-widest text-sm md:text-base uppercase z-20">
-                Zenmaster, CEO
-            </div>
+                        const particlesMesh = new THREE.Points(particlesGeometry, material);
+                        scene.add(particlesMesh);
 
-        </div>
-    </section>
+                        // Lighting
+                        const pointLight = new THREE.PointLight(0xffffff, 0.1);
+                        pointLight.position.x = 2;
+                        pointLight.position.y = 3;
+                        pointLight.position.z = 4;
+                        scene.add(pointLight);
 
+                        camera.position.z = 3;
 
-    <!-- 3D Background Script -->
-    <script>
-        // Initialize Lucide Icons
-        lucide.createIcons();
+                        // Mouse Interaction
+                        let mouseX = 0;
+                        let mouseY = 0;
 
-        // GSAP Animations
-        gsap.from(".fade-in", {
-            y: 50,
-            opacity: 0,
-            duration: 1,
-            stagger: 0.2,
-            ease: "power3.out"
-        });
+                        document.addEventListener('mousemove', (event) => {
+                            mouseX = event.clientX / window.innerWidth - 0.5;
+                            mouseY = event.clientY / window.innerHeight - 0.5;
+                        });
 
-        // Three.js Scene
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                        // Animation Loop
+                        const clock = new THREE.Clock();
 
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+                        function animate() {
+                            requestAnimationFrame(animate);
+                            const elapsedTime = clock.getElapsedTime();
 
-        // Particles
-        const particlesGeometry = new THREE.BufferGeometry();
-        const particlesCount = 2000;
-        const posArray = new Float32Array(particlesCount * 3);
+                            particlesMesh.rotation.y = elapsedTime * 0.05;
+                            particlesMesh.rotation.x = mouseY * 0.5;
+                            particlesMesh.rotation.y += mouseX * 0.5;
 
-        for (let i = 0; i < particlesCount * 3; i++) {
-            posArray[i] = (Math.random() - 0.5) * 15;
-        }
+                            renderer.render(scene, camera);
+                        }
 
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+                        animate();
 
-        const material = new THREE.PointsMaterial({
-            size: 0.02,
-            color: 0x8b5cf6,
-            transparent: true,
-            opacity: 0.8,
-        });
-
-        const particlesMesh = new THREE.Points(particlesGeometry, material);
-        scene.add(particlesMesh);
-
-        // Lighting
-        const pointLight = new THREE.PointLight(0xffffff, 0.1);
-        pointLight.position.x = 2;
-        pointLight.position.y = 3;
-        pointLight.position.z = 4;
-        scene.add(pointLight);
-
-        camera.position.z = 3;
-
-        // Mouse Interaction
-        let mouseX = 0;
-        let mouseY = 0;
-
-        document.addEventListener('mousemove', (event) => {
-            mouseX = event.clientX / window.innerWidth - 0.5;
-            mouseY = event.clientY / window.innerHeight - 0.5;
-        });
-
-        // Animation Loop
-        const clock = new THREE.Clock();
-
-        function animate() {
-            requestAnimationFrame(animate);
-            const elapsedTime = clock.getElapsedTime();
-
-            particlesMesh.rotation.y = elapsedTime * 0.05;
-            particlesMesh.rotation.x = mouseY * 0.5;
-            particlesMesh.rotation.y += mouseX * 0.5;
-
-            renderer.render(scene, camera);
-        }
-
-        animate();
-
-        // Resize Handler
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
+                        // Resize Handler
+                        window.addEventListener('resize', () => {
+                            camera.aspect = window.innerWidth / window.innerHeight;
+                            camera.updateProjectionMatrix();
+                            renderer.setSize(window.innerWidth, window.innerHeight);
+                        });
+                    </script>
 </body>
 
 </html>

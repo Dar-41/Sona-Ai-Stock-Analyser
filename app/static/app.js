@@ -3,7 +3,8 @@ const { createChart } = LightweightCharts;
 // Icons are handled via data-lucide attributes and lucide.createIcons()
 
 // Helper Component for TradingView Heatmap
-const TradingViewHeatmap = ({ theme }) => {
+// Helper Component for TradingView Heatmap
+const TradingViewHeatmap = ({ theme, dataSource }) => {
     const container = useRef();
 
     useEffect(() => {
@@ -18,11 +19,11 @@ const TradingViewHeatmap = ({ theme }) => {
         script.async = true;
         script.innerHTML = JSON.stringify({
             "exchanges": [],
-            "dataSource": "S&P500",
+            "dataSource": dataSource, // Dynamic Data Source
             "grouping": "sector",
             "blockSize": "market_cap_basic",
             "blockColor": "change",
-            "locale": "en",
+            "locale": "in",
             "symbolUrl": "",
             "colorTheme": theme === 'dark' ? "dark" : "light",
             "hasTopBar": true,
@@ -33,7 +34,7 @@ const TradingViewHeatmap = ({ theme }) => {
             "height": "100%"
         });
         container.current.appendChild(script);
-    }, [theme]); // Re-render if theme changes
+    }, [theme, dataSource]); // Re-render if theme or dataSource changes
 
     return (
         <div className="tradingview-widget-container h-full w-full" ref={container}>
@@ -58,6 +59,7 @@ const App = () => {
     const [insightResults, setInsightResults] = useState(null);
     const [insightLoading, setInsightLoading] = useState(false);
     const [showHeatmap, setShowHeatmap] = useState(false);
+    const [heatmapSource, setHeatmapSource] = useState('NIFTY50'); // Default to Indian Market
 
     // Risk Calculator State
     const [accountBalance, setAccountBalance] = useState(10000);
@@ -592,19 +594,38 @@ const App = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
                     <div className="bg-card w-full max-w-7xl h-[85vh] rounded-3xl shadow-2xl border border-border flex flex-col overflow-hidden">
                         <div className="p-4 border-b border-border flex justify-between items-center bg-card z-10">
-                            <h2 className="text-lg font-bold text-primary flex items-center gap-2">
-                                <i data-lucide="grid" className="text-blue-400"></i>
-                                Global Market Heatmap
-                            </h2>
+                            <div className="flex items-center gap-4">
+                                <h2 className="text-lg font-bold text-primary flex items-center gap-2">
+                                    <i data-lucide="grid" className="text-blue-400"></i>
+                                    Market Heatmap
+                                </h2>
+                                {/* Source Selector */}
+                                <div className="flex bg-slate-800 p-1 rounded-lg">
+                                    <button
+                                        onClick={() => setHeatmapSource('NIFTY50')}
+                                        className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${heatmapSource === 'NIFTY50' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                                    >
+                                        Indian (NIFTY 50)
+                                    </button>
+                                    <button
+                                        onClick={() => setHeatmapSource('SPX500')}
+                                        className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${heatmapSource === 'SPX500' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                                    >
+                                        Global (S&P 500)
+                                    </button>
+                                </div>
+                            </div>
+
                             <button
                                 onClick={() => setShowHeatmap(false)}
-                                className="p-2 rounded-full hover:bg-slate-500/10 text-secondary hover:text-primary transition-colors"
+                                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-full transition-colors flex items-center gap-2"
                             >
-                                <i data-lucide="x" className="w-6 h-6"></i>
+                                <i data-lucide="arrow-left" className="w-4 h-4"></i>
+                                Back to Dashboard
                             </button>
                         </div>
                         <div className="flex-1 bg-slate-900 relative">
-                            <TradingViewHeatmap theme={theme} />
+                            <TradingViewHeatmap theme={theme} dataSource={heatmapSource} />
                         </div>
                     </div>
                 </div>

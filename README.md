@@ -1,6 +1,10 @@
-# Stock Analysis App
+# 🚀 Sona AI - Advanced Stock Market Analysis Platform
 
-Institutional grade stock analysis application with image recognition and technical analysis.
+**Live Site**: [https://sonaai.in](https://sonaai.in)
+
+Institutional-grade stock analysis application with AI-powered insights, Smart Money Concepts (SMC), and real-time market data. Built by [Darsh Sheth](https://www.linkedin.com/in/darsh-sheth-1779bb185).
+
+---
 
 ## Tech Stack
 - **Backend**: Python (FastAPI)

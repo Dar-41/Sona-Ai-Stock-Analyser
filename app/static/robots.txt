@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://sonaai.in/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1

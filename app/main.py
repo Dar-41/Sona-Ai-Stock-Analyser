@@ -90,6 +90,19 @@ async def read_about(request: Request):
             status_code=500
         )
 
+# SEO Routes
+@app.get("/robots.txt")
+async def robots():
+    """Serve robots.txt for search engine crawlers"""
+    from fastapi.responses import FileResponse
+    return FileResponse("app/static/robots.txt", media_type="text/plain")
+
+@app.get("/sitemap.xml")
+async def sitemap():
+    """Serve sitemap.xml for search engines"""
+    from fastapi.responses import FileResponse
+    return FileResponse("app/static/sitemap.xml", media_type="application/xml")
+
 from app.api import routes
 
 app.include_router(routes.router, prefix="/api")

@@ -103,6 +103,12 @@ async def sitemap():
     from fastapi.responses import FileResponse
     return FileResponse("app/static/sitemap.xml", media_type="application/xml")
 
+@app.get("/google1e9c8c59e6a3e781.html")
+async def google_verification():
+    """Serve Google Search Console verification file"""
+    from fastapi.responses import FileResponse
+    return FileResponse("app/static/google1e9c8c59e6a3e781.html", media_type="text/html")
+
 from app.api import routes
 
 app.include_router(routes.router, prefix="/api")

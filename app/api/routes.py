@@ -15,6 +15,14 @@ import json
 from app.analysis import analyze_market_structure
 from app.polygon_client import PolygonClient
 from app.alphavantage_client import AlphaVantageClient
+import requests_cache
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# Set up persistent requests cache for yfinance (expires after 1 hour)
+# Note: yfinance no longer supports requests_cache due to curl_cffi requirement.
+# We keep ThreadPoolExecutor for massive concurrency speedups.
+
+
 
 # Simple in-memory cache with TTL
 cache_store = {}
@@ -489,7 +497,6 @@ def fetch_market_data(ticker_info, period="1y", interval="1d"):
         try:
             print(f"[FETCH] Attempting to fetch {ticker} (attempt {attempt}/{max_retries})...")
             
-            # Create ticker object with custom headers to avoid blocking
             # Create ticker object (let yfinance handle session/headers for best compatibility)
             ticker_obj = yf.Ticker(ticker)
             
@@ -702,14 +709,14 @@ async def get_insights():
     
     print(f"[INSIGHTS] Starting scan for {len(candidates)} stocks...")
     
-    for symbol in candidates:
+    def process_stock(symbol):
         try:
             ticker = yf.Ticker(symbol)
             info = ticker.info
             
             # Skip checking if info is empty
             if not info:
-                continue
+                return None
                 
             # --- 1. Basic Info ---
             name = info.get('longName', symbol)
@@ -717,18 +724,12 @@ async def get_insights():
             market_cap = info.get('marketCap', 0)
             current_price = info.get('currentPrice', info.get('regularMarketPrice', 0))
             
-            # --- Filter: Exclude Commodities/Indices (Simple check based on sector/name) ---
+            # --- Filter: Exclude Commodities/Indices ---
             industry = info.get('industry', '').lower()
             if 'index' in industry or 'commodity' in industry or 'fund' in industry:
-                continue
+                return None
 
-            # --- 2. Age (Years since IPO/Founding) ---
-            # yfinance doesn't always have IPO date, fallback to a default "Mature" if missing or logic
-            # heuristic: if no data, assume > 10 years for these major stocks
-            age = "N/A" # Placeholder, hard to get reliably via simple free API
-            
-            # --- 3. Promoter Holding ---
-            # 'heldPercentInsiders' is a proxy for promoter holding
+            age = "N/A"
             promoter_holding = info.get('heldPercentInsiders', 0) * 100
             
             # --- 4. Financials (CAGR & Cash Flow) ---
@@ -749,19 +750,14 @@ async def get_insights():
             if not financials.empty and not cashflow.empty:
                 # Sales CAGR
                 try:
-                    # Get Total Revenue (usually first row or 'Total Revenue')
                     rev_row = financials.loc['Total Revenue'] if 'Total Revenue' in financials.index else financials.iloc[0]
-                    # Sort chronological
                     revs = rev_row.sort_index()
-                    if len(revs) >= 4: # Need at least 4-5 years
-                        # Simple CAGR: (End/Start)^(1/n) - 1
+                    if len(revs) >= 4:
                         start_rev = revs.iloc[0]
                         end_rev = revs.iloc[-1]
                         years = len(revs) - 1
                         if start_rev > 0:
                             sales_cagr_5yr = ((end_rev / start_rev) ** (1/years) - 1) * 100
-                            
-                        # Trend heuristic
                         if sales_cagr_5yr > 10: unit_sales_trend = f"Rising (+{sales_cagr_5yr:.1f}%)"
                         elif sales_cagr_5yr < -5: unit_sales_trend = f"Falling ({sales_cagr_5yr:.1f}%)"
                         else: unit_sales_trend = "Flat"
@@ -770,30 +766,28 @@ async def get_insights():
 
                 # Profit CAGR
                 try:
-                    ni_row = financials.loc['Net Income'] if 'Net Income' in financials.index else financials.iloc[-1] # Fallback
+                    ni_row = financials.loc['Net Income'] if 'Net Income' in financials.index else financials.iloc[-1]
                     nis = ni_row.sort_index()
                     if len(nis) >= 4:
                         start_ni = nis.iloc[0]
                         end_ni = nis.iloc[-1]
                         years = len(nis) - 1
-                        if start_ni > 0: # CAGR meaningless if start is negative
+                        if start_ni > 0:
                             profit_cagr_5yr = ((end_ni / start_ni) ** (1/years) - 1) * 100
                 except Exception:
                     pass
                 
-                # Cash Flow Check (Latest 3 years)
+                # Cash Flow Check
                 try:
-                    ocf_row = cashflow.loc['Operating Cash Flow'] if 'Operating Cash Flow' in cashflow.index else cashflow.iloc[0] # Approx
-                    # Get last 3 years
-                    recent_ocf = ocf_row.iloc[:3] # cashflow cols are usually descending date (newest first)
+                    ocf_row = cashflow.loc['Operating Cash Flow'] if 'Operating Cash Flow' in cashflow.index else cashflow.iloc[0]
+                    recent_ocf = ocf_row.iloc[:3]
                     ocf_positive_years = [v > 0 for v in recent_ocf]
                     is_ocf_positive_3yr = all(ocf_positive_years) and len(ocf_positive_years) >= 2
                 except Exception:
                     pass
 
-                # ROC / ROE (Average 5yr)
-                # Proxy: Return on Equity
-                avg_roc_5yr = info.get('returnOnEquity', 0) * 100 # Current ROE as proxy if historical missing
+                # ROC / ROE
+                avg_roc_5yr = info.get('returnOnEquity', 0) * 100
             
             # Debt
             try:
@@ -804,7 +798,7 @@ async def get_insights():
             except Exception:
                 pass
                 
-            # --- 5. Management Integrity Note (Generative/Heuristic) ---
+            # Management Integrity
             integrity_note = "Management demonstrates consistent execution."
             if profit_cagr_5yr > 15 and is_ocf_positive_3yr:
                 integrity_note = "Strong capital allocation and consistent cash generation."
@@ -813,43 +807,32 @@ async def get_insights():
             elif profit_cagr_5yr < 0:
                 integrity_note = "Navigating through challenging growth environment."
 
-            # --- 6. Scoring ---
-            # Weights: Promoter 15, Sales 20, Profit 20, ROC 25, CashFlow 20
+            # Scoring
             score = 0
-            
-            # Promoter (Using Insider % as proxy)
-            # More skin in the game is usually better, but US stocks (AAPL) have low insider holding.
-            # We adjust logic: For Indian stocks (.NS), expect > 30%. For US, relax it.
             if ".NS" in symbol:
                 if promoter_holding > 50: score += 15
                 elif promoter_holding > 30: score += 10
                 else: score += 5
             else:
-                score += 15 # Give full points for US blue chips on 'structure' usually
+                score += 15
             
-            # Sales CAGR
             if sales_cagr_5yr > 15: score += 20
             elif sales_cagr_5yr > 8: score += 15
             elif sales_cagr_5yr > 0: score += 10
             
-            # Profit CAGR
             if profit_cagr_5yr > 15: score += 20
             elif profit_cagr_5yr > 10: score += 15
             elif profit_cagr_5yr > 0: score += 10
             
-            # ROC (Using ROE proxy)
             if avg_roc_5yr > 20: score += 25
             elif avg_roc_5yr > 15: score += 20
             elif avg_roc_5yr > 10: score += 10
             
-            # Cash Flow
             if is_ocf_positive_3yr: score += 20
             elif len([x for x in ocf_positive_years if x]) >= 1: score += 10
             
-            # Currency formatting
             currency = "₹" if ".NS" in symbol else "$"
             
-            # Construct Result Object
             stock_data = {
                 "ticker": symbol.replace(".NS", ""),
                 "currency": currency,
@@ -869,11 +852,20 @@ async def get_insights():
                 "last_price": round(current_price, 2),
                 "score": score
             }
-            results.append(stock_data)
+            return stock_data
 
         except Exception as e:
             print(f"[INSIGHTS] Error processing {symbol}: {e}")
-            continue
+            return None
+
+    # Execute in parallel
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        # map preserves order, but we'll sort anyway
+        futures = [executor.submit(process_stock, symbol) for symbol in candidates]
+        for future in as_completed(futures):
+            res = future.result()
+            if res:
+                results.append(res)
 
     # Sort by Score (Desc)
     results.sort(key=lambda x: x['score'], reverse=True)
@@ -1072,4 +1064,241 @@ async def get_market_data(symbol: str, timeframe: str = "1D"):
         raise HTTPException(
             status_code=500,
             detail=f"Server error while fetching data: {str(e)}"
+        )
+
+@router.get("/screener/{symbol}")
+async def get_screener_data(symbol: str):
+    """Get comprehensive fundamental/screener data for a stock"""
+    try:
+        print(f"[SCREENER] Request for symbol: {symbol}")
+        
+        # Normalize the ticker
+        normalized_symbol = normalize_ticker(symbol)
+        if not normalized_symbol:
+            raise HTTPException(status_code=400, detail=f"Invalid symbol: '{symbol}'")
+        
+        print(f"[SCREENER] Normalized to: {normalized_symbol}")
+        
+        ticker = yf.Ticker(normalized_symbol)
+        info = ticker.info
+        
+        if not info or info.get('regularMarketPrice') is None and info.get('currentPrice') is None:
+            # Try alternatives
+            alternatives = []
+            raw = symbol.upper().strip()
+            if ".NS" not in raw and ".BO" not in raw:
+                alternatives.append(raw + ".NS")
+                alternatives.append(raw + ".BO")
+            elif raw.endswith(".NS"):
+                alternatives.append(raw.replace(".NS", ".BO"))
+            elif raw.endswith(".BO"):
+                alternatives.append(raw.replace(".BO", ".NS"))
+            
+            for alt in alternatives:
+                try:
+                    ticker = yf.Ticker(alt)
+                    info = ticker.info
+                    if info and (info.get('regularMarketPrice') or info.get('currentPrice')):
+                        normalized_symbol = alt
+                        print(f"[SCREENER] ✅ Found with alternative: {alt}")
+                        break
+                except Exception:
+                    continue
+        
+        if not info or (info.get('regularMarketPrice') is None and info.get('currentPrice') is None):
+            raise HTTPException(status_code=404, detail=f"No data found for '{symbol}'. Try: {symbol}.NS, {symbol}.BO, or check the ticker.")
+        
+        # --- Basic Info ---
+        current_price = info.get('currentPrice', info.get('regularMarketPrice', 0))
+        prev_close = info.get('previousClose', info.get('regularMarketPreviousClose', current_price))
+        price_change = current_price - prev_close if current_price and prev_close else 0
+        price_change_pct = (price_change / prev_close * 100) if prev_close and prev_close != 0 else 0
+        
+        # --- Currency ---
+        currency = get_currency_symbol(normalized_symbol)
+        
+        # --- Financials for CAGR ---
+        sales_cagr = 0
+        profit_cagr = 0
+        
+        try:
+            financials = ticker.financials
+            if financials is not None and not financials.empty:
+                # Sales CAGR
+                if 'Total Revenue' in financials.index:
+                    rev_row = financials.loc['Total Revenue'].sort_index()
+                    if len(rev_row) >= 3:
+                        start_rev = rev_row.iloc[0]
+                        end_rev = rev_row.iloc[-1]
+                        years = len(rev_row) - 1
+                        if start_rev and start_rev > 0:
+                            sales_cagr = round(((end_rev / start_rev) ** (1 / years) - 1) * 100, 2)
+                
+                # Profit CAGR
+                if 'Net Income' in financials.index:
+                    ni_row = financials.loc['Net Income'].sort_index()
+                    if len(ni_row) >= 3:
+                        start_ni = ni_row.iloc[0]
+                        end_ni = ni_row.iloc[-1]
+                        years = len(ni_row) - 1
+                        if start_ni and start_ni > 0:
+                            profit_cagr = round(((end_ni / start_ni) ** (1 / years) - 1) * 100, 2)
+        except Exception as e:
+            print(f"[SCREENER] Financials error: {e}")
+        
+        # --- ROCE Calculation ---
+        roce = 0
+        try:
+            financials_data = ticker.financials
+            balance_sheet = ticker.balance_sheet
+            if financials_data is not None and not financials_data.empty and balance_sheet is not None and not balance_sheet.empty:
+                ebit = None
+                if 'EBIT' in financials_data.index:
+                    ebit = financials_data.loc['EBIT'].iloc[0]
+                elif 'Operating Income' in financials_data.index:
+                    ebit = financials_data.loc['Operating Income'].iloc[0]
+                
+                total_assets = balance_sheet.loc['Total Assets'].iloc[0] if 'Total Assets' in balance_sheet.index else 0
+                current_liabilities = balance_sheet.loc['Current Liabilities'].iloc[0] if 'Current Liabilities' in balance_sheet.index else 0
+                
+                capital_employed = total_assets - current_liabilities
+                if ebit and capital_employed and capital_employed > 0:
+                    roce = round((ebit / capital_employed) * 100, 2)
+        except Exception as e:
+            print(f"[SCREENER] ROCE calc error: {e}")
+        
+        # --- Quarterly Financials ---
+        quarterly_data = []
+        try:
+            q_financials = ticker.quarterly_financials
+            if q_financials is not None and not q_financials.empty:
+                # Get last 4 quarters
+                cols = q_financials.columns[:4]  # newest first
+                for col in cols:
+                    q_revenue = 0
+                    q_net_income = 0
+                    q_label = col.strftime('%b %Y') if hasattr(col, 'strftime') else str(col)
+                    
+                    if 'Total Revenue' in q_financials.index:
+                        val = q_financials.loc['Total Revenue', col]
+                        q_revenue = float(val) if not pd.isna(val) else 0
+                    
+                    if 'Net Income' in q_financials.index:
+                        val = q_financials.loc['Net Income', col]
+                        q_net_income = float(val) if not pd.isna(val) else 0
+                    
+                    quarterly_data.append({
+                        "quarter": q_label,
+                        "revenue": q_revenue,
+                        "revenue_fmt": human_format(q_revenue, currency),
+                        "net_income": q_net_income,
+                        "net_income_fmt": human_format(q_net_income, currency),
+                        "margin": round((q_net_income / q_revenue * 100), 1) if q_revenue and q_revenue != 0 else 0
+                    })
+        except Exception as e:
+            print(f"[SCREENER] Quarterly error: {e}")
+        
+        # --- Shareholding ---
+        institutional_pct = round((info.get('heldPercentInstitutions', 0) or 0) * 100, 2)
+        insider_pct = round((info.get('heldPercentInsiders', 0) or 0) * 100, 2)
+        public_pct = round(max(0, 100 - institutional_pct - insider_pct), 2)
+        
+        # --- 1Y Price History (for sparkline) ---
+        sparkline = []
+        try:
+            hist = ticker.history(period="1y", interval="1wk")
+            if hist is not None and not hist.empty:
+                for _, row in hist.iterrows():
+                    if not pd.isna(row['Close']):
+                        sparkline.append(round(float(row['Close']), 2))
+        except Exception as e:
+            print(f"[SCREENER] Sparkline error: {e}")
+        
+        # --- Build Response ---
+        market_cap_raw = info.get('marketCap', 0)
+        roe_raw = info.get('returnOnEquity', 0)
+        
+        result = {
+            "symbol": normalized_symbol,
+            "display_symbol": symbol.upper().replace(".NS", "").replace(".BO", ""),
+            "currency": currency,
+            
+            # Company Info
+            "name": info.get('longName', info.get('shortName', symbol)),
+            "sector": info.get('sector', 'N/A'),
+            "industry": info.get('industry', 'N/A'),
+            "website": info.get('website', ''),
+            "description": (info.get('longBusinessSummary', '') or '')[:300],
+            
+            # Price Info
+            "current_price": round(current_price, 2) if current_price else 0,
+            "prev_close": round(prev_close, 2) if prev_close else 0,
+            "price_change": round(price_change, 2),
+            "price_change_pct": round(price_change_pct, 2),
+            "day_high": round(info.get('dayHigh', 0) or 0, 2),
+            "day_low": round(info.get('dayLow', 0) or 0, 2),
+            "fifty_two_week_high": round(info.get('fiftyTwoWeekHigh', 0) or 0, 2),
+            "fifty_two_week_low": round(info.get('fiftyTwoWeekLow', 0) or 0, 2),
+            
+            # Valuation Metrics
+            "market_cap": market_cap_raw or 0,
+            "market_cap_fmt": human_format(market_cap_raw, currency) if market_cap_raw else "N/A",
+            "pe_ratio": round(info.get('trailingPE', 0) or 0, 2),
+            "forward_pe": round(info.get('forwardPE', 0) or 0, 2),
+            "pb_ratio": round(info.get('priceToBook', 0) or 0, 2),
+            "ps_ratio": round(info.get('priceToSalesTrailing12Months', 0) or 0, 2),
+            "ev_ebitda": round(info.get('enterpriseToEbitda', 0) or 0, 2),
+            
+            # Fundamentals
+            "book_value": round(info.get('bookValue', 0) or 0, 2),
+            "eps": round(info.get('trailingEps', 0) or 0, 2),
+            "forward_eps": round(info.get('forwardEps', 0) or 0, 2),
+            "roe": round(roe_raw * 100, 2) if roe_raw else 0,
+            "roce": roce,
+            "dividend_yield": round((info.get('dividendYield', 0) or 0) * 100, 2),
+            "payout_ratio": round((info.get('payoutRatio', 0) or 0) * 100, 2),
+            
+            # Financial Health
+            "revenue": info.get('totalRevenue', 0) or 0,
+            "revenue_fmt": human_format(info.get('totalRevenue', 0), currency),
+            "net_profit_margin": round((info.get('profitMargins', 0) or 0) * 100, 2),
+            "operating_margin": round((info.get('operatingMargins', 0) or 0) * 100, 2),
+            "gross_margin": round((info.get('grossMargins', 0) or 0) * 100, 2),
+            "debt_to_equity": round(info.get('debtToEquity', 0) or 0, 2),
+            "current_ratio": round(info.get('currentRatio', 0) or 0, 2),
+            "total_debt": info.get('totalDebt', 0) or 0,
+            "total_debt_fmt": human_format(info.get('totalDebt', 0), currency),
+            "total_cash": info.get('totalCash', 0) or 0,
+            "total_cash_fmt": human_format(info.get('totalCash', 0), currency),
+            
+            # Growth
+            "sales_cagr_5yr": sales_cagr,
+            "profit_cagr_5yr": profit_cagr,
+            "revenue_growth": round((info.get('revenueGrowth', 0) or 0) * 100, 2),
+            "earnings_growth": round((info.get('earningsGrowth', 0) or 0) * 100, 2),
+            
+            # Shareholding
+            "institutional_holding": institutional_pct,
+            "insider_holding": insider_pct,
+            "public_holding": public_pct,
+            
+            # Quarterly
+            "quarterly": quarterly_data,
+            
+            # Sparkline
+            "sparkline": sparkline,
+        }
+        
+        print(f"[SCREENER] ✅ Successfully built screener data for {normalized_symbol}")
+        return JSONResponse(content=result)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[SCREENER] Error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error fetching screener data: {str(e)}"
         )

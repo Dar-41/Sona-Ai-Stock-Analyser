@@ -90,6 +90,18 @@ async def read_about(request: Request):
             status_code=500
         )
 
+@app.get("/screener", response_class=HTMLResponse)
+async def read_screener(request: Request):
+    try:
+        return templates.TemplateResponse("index.html", {"request": request})
+    except Exception as e:
+        logger.error(f"Error serving screener: {e}")
+        return HTMLResponse(
+            content=f"<h1>Error loading screener</h1><p>{str(e)}</p>",
+            status_code=500
+        )
+
+
 # SEO Routes
 @app.get("/robots.txt")
 async def robots():

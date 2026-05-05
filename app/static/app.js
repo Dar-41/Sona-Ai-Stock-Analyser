@@ -60,6 +60,11 @@ const App = () => {
     const [insightLoading, setInsightLoading] = useState(false);
     const [showHeatmap, setShowHeatmap] = useState(false);
     const [heatmapSource, setHeatmapSource] = useState('NIFTY50'); // Default to Indian Market
+    const [showScreener, setShowScreener] = useState(false);
+    const [screenerTicker, setScreenerTicker] = useState('');
+    const [screenerData, setScreenerData] = useState(null);
+    const [screenerLoading, setScreenerLoading] = useState(false);
+    const [screenerError, setScreenerError] = useState(null);
 
     // Risk Calculator State
     const [accountBalance, setAccountBalance] = useState(10000);
@@ -184,6 +189,15 @@ const App = () => {
 
         return () => clearTimeout(timer);
     }, [marketData, analysis, theme]);
+
+    // Re-init Lucide for screener modal to prevent removeChild errors
+    useEffect(() => {
+        if (!showScreener) return;
+        const t = setTimeout(() => {
+            if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+        }, 300);
+        return () => clearTimeout(t);
+    }, [showScreener, screenerData]);
 
     // Initialize Chart
     useEffect(() => {
@@ -472,6 +486,35 @@ const App = () => {
         }
     };
 
+    const handleScreenerSearch = async (symbol) => {
+        const target = symbol || screenerTicker;
+        if (!target) return;
+        
+        setScreenerLoading(true);
+        setScreenerError(null);
+        setStatus(`Fetching Fundamentals for ${target}...`);
+        
+        try {
+            const response = await fetch(`/api/screener/${target}`);
+            const data = await response.json();
+            
+            if (response.ok && data && (data.symbol || data.display_symbol)) {
+                setScreenerData(data);
+                setStatus(`Screener: ${target} Data Loaded`);
+            } else {
+                const errorMsg = data.detail || `Failed to screen ${target}`;
+                setScreenerError(errorMsg);
+                setStatus(`Screener: ${errorMsg}`);
+            }
+        } catch (error) {
+            console.error("Screener error:", error);
+            setScreenerError("Screener connection failed");
+            setStatus("Screener connection failed");
+        } finally {
+            setScreenerLoading(false);
+        }
+    };
+
     // Timeframe change handler
     const handleTimeframeChange = async (newTf) => {
         setTimeframe(newTf);
@@ -586,6 +629,13 @@ const App = () => {
                         <i data-lucide="grid" className="w-4 h-4"></i>
                         Market Map
                     </button>
+                    <button
+                        onClick={() => setShowScreener(true)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${showScreener ? 'btn-purple' : 'btn-dark'}`}
+                    >
+                        <i data-lucide="search" className="w-4 h-4"></i>
+                        Screener
+                    </button>
                 </div>
             </header>
 
@@ -626,6 +676,257 @@ const App = () => {
                         </div>
                         <div className="flex-1 bg-slate-900 relative">
                             <TradingViewHeatmap theme={theme} dataSource={heatmapSource} />
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Screener Modal */}
+            {showScreener && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-card w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-3xl shadow-2xl border border-border flex flex-col">
+                        {/* Header */}
+                        <div className="p-5 border-b border-border flex justify-between items-center sticky top-0 bg-card z-10 backdrop-blur-xl">
+                            <div>
+                                <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+                                    <span className="text-xl">📊</span>
+                                    Stock Screener
+                                </h2>
+                                <p className="text-xs text-secondary mt-0.5">Fundamental analysis at a glance</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => { setShowScreener(false); setScreenerData(null); setScreenerTicker(''); }} 
+                                    className="px-4 py-2 rounded-full hover:bg-slate-500/10 text-secondary hover:text-primary transition-colors text-sm font-bold flex items-center gap-2"
+                                    title="Back to Dashboard"
+                                >
+                                    <span className="text-sm">🏠</span> Home
+                                </button>
+                                <button onClick={() => { setShowScreener(false); setScreenerData(null); setScreenerTicker(''); }}
+                                    className="p-2 rounded-full hover:bg-slate-500/10 text-secondary hover:text-primary transition-colors text-xl" title="Close Screener">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Search */}
+                        <div className="p-5 border-b border-border">
+                            <form onSubmit={(e) => { e.preventDefault(); handleScreenerSearch(); }} className="flex gap-3">
+                                <input type="text" value={screenerTicker}
+                                    onChange={(e) => setScreenerTicker(e.target.value.toUpperCase())}
+                                    placeholder="Enter stock symbol (e.g. RELIANCE, TCS, AAPL)"
+                                    className="flex-1 input-modern rounded-2xl px-5 py-3 text-sm font-medium" autoComplete="off" />
+                                <button type="submit" className="btn-purple px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2">
+                                    <span className="text-sm">🔎</span> Screen
+                                </button>
+                            </form>
+                            <div className="flex flex-wrap gap-2 mt-3">
+                                {['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ITC', 'AAPL', 'NVDA', 'TATAMOTORS'].map(s => (
+                                    <button key={s} onClick={() => { setScreenerTicker(s); handleScreenerSearch(s); }}
+                                        className="px-3 py-1 rounded-lg btn-dark text-[11px] font-bold text-secondary hover:text-primary">{s}</button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-5">
+                            {screenerLoading ? (
+                                <div className="flex flex-col items-center justify-center py-20">
+                                    <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mb-6"></div>
+                                    <h3 className="text-lg font-bold text-primary animate-pulse">Fetching Fundamentals...</h3>
+                                    <p className="text-sm text-secondary mt-2">Analyzing financial data for {screenerTicker}</p>
+                                </div>
+                            ) : !screenerData ? (
+                                <div className="flex flex-col items-center justify-center py-20 text-center">
+                                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 flex items-center justify-center mb-6">
+                                        <span className="text-4xl">📈</span>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-primary mb-2">Search any stock</h3>
+                                    <p className="text-sm text-secondary max-w-md">Enter a ticker symbol to see PE, ROE, Book Value, Growth Metrics, Shareholding Patterns and more.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-5 fade-in-up">
+                                    {/* Overview Row */}
+                                    <div className="dark-card rounded-2xl p-5">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-1">
+                                                    <h3 className="text-2xl font-black text-primary">{screenerData.display_symbol}</h3>
+                                                    <span className="text-xs px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-400 font-bold">{screenerData.sector}</span>
+                                                </div>
+                                                <p className="text-sm text-secondary">{screenerData.name}</p>
+                                                <p className="text-xs text-slate-500 mt-1">{screenerData.industry}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-3xl font-black text-primary">{screenerData.currency}{screenerData.current_price}</div>
+                                                <div className={`text-sm font-bold ${screenerData.price_change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                    {screenerData.price_change >= 0 ? '+' : ''}{screenerData.price_change} ({screenerData.price_change_pct}%)
+                                                </div>
+                                                <div className="text-xs text-slate-500 mt-1">
+                                                    52W: {screenerData.currency}{screenerData.fifty_two_week_low} — {screenerData.currency}{screenerData.fifty_two_week_high}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* 52W Range Bar */}
+                                        <div className="mt-4">
+                                            <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+                                                <span>{screenerData.currency}{screenerData.fifty_two_week_low}</span>
+                                                <span>{screenerData.currency}{screenerData.fifty_two_week_high}</span>
+                                            </div>
+                                            <div className="w-full bg-slate-700/50 rounded-full h-2 relative">
+                                                <div className="absolute h-2 rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500" style={{width: '100%'}}></div>
+                                                {screenerData.fifty_two_week_high > screenerData.fifty_two_week_low && (
+                                                    <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full border-2 border-purple-500 shadow-lg"
+                                                        style={{left: `${Math.min(100, Math.max(0, ((screenerData.current_price - screenerData.fifty_two_week_low) / (screenerData.fifty_two_week_high - screenerData.fifty_two_week_low)) * 100))}%`, transform: 'translate(-50%, -50%)'}}></div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {/* Sparkline */}
+                                        {screenerData.sparkline && screenerData.sparkline.length > 2 && (
+                                            <div className="mt-4 h-16">
+                                                <svg viewBox={`0 0 ${screenerData.sparkline.length} 50`} className="w-full h-full" preserveAspectRatio="none">
+                                                    <defs><linearGradient id="spkGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={screenerData.price_change >= 0 ? '#10B981' : '#EF4444'} stopOpacity="0.3"/><stop offset="100%" stopColor={screenerData.price_change >= 0 ? '#10B981' : '#EF4444'} stopOpacity="0"/></linearGradient></defs>
+                                                    {(() => { const mn = Math.min(...screenerData.sparkline); const mx = Math.max(...screenerData.sparkline); const rng = mx - mn || 1;
+                                                        const pts = screenerData.sparkline.map((v,i) => `${i},${50 - ((v-mn)/rng)*48}`).join(' ');
+                                                        const area = `0,50 ${pts} ${screenerData.sparkline.length-1},50`;
+                                                        return (<g><polygon points={area} fill="url(#spkGrad)"/><polyline points={pts} fill="none" stroke={screenerData.price_change >= 0 ? '#10B981' : '#EF4444'} strokeWidth="1.5"/></g>);
+                                                    })()}
+                                                </svg>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Key Metrics Grid */}
+                                    <div>
+                                        <h4 className="text-xs font-bold text-secondary uppercase tracking-wider mb-3">Valuation & Fundamentals</h4>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                                            {[
+                                                {l:'Market Cap', v: screenerData.market_cap_fmt, c:'text-primary'},
+                                                {l:'PE Ratio', v: screenerData.pe_ratio || 'N/A', c: screenerData.pe_ratio > 0 && screenerData.pe_ratio < 25 ? 'text-green-400' : screenerData.pe_ratio > 40 ? 'text-red-400' : 'text-primary'},
+                                                {l:'Forward PE', v: screenerData.forward_pe || 'N/A', c:'text-primary'},
+                                                {l:'PB Ratio', v: screenerData.pb_ratio || 'N/A', c: screenerData.pb_ratio > 0 && screenerData.pb_ratio < 3 ? 'text-green-400' : 'text-primary'},
+                                                {l:'EV/EBITDA', v: screenerData.ev_ebitda || 'N/A', c:'text-primary'},
+                                                {l:'Book Value', v: `${screenerData.currency}${screenerData.book_value}`, c:'text-primary'},
+                                                {l:'EPS (TTM)', v: `${screenerData.currency}${screenerData.eps}`, c: screenerData.eps > 0 ? 'text-green-400' : 'text-red-400'},
+                                                {l:'ROE', v: `${screenerData.roe}%`, c: screenerData.roe > 15 ? 'text-green-400' : screenerData.roe > 10 ? 'text-yellow-400' : 'text-red-400'},
+                                                {l:'ROCE', v: `${screenerData.roce}%`, c: screenerData.roce > 15 ? 'text-green-400' : screenerData.roce > 10 ? 'text-yellow-400' : 'text-red-400'},
+                                                {l:'Div Yield', v: `${screenerData.dividend_yield}%`, c: screenerData.dividend_yield > 2 ? 'text-green-400' : 'text-primary'},
+                                            ].map((m,i) => (
+                                                <div key={i} className="dark-card rounded-xl p-3 hover:scale-[1.02] transition-transform">
+                                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 font-bold">{m.l}</div>
+                                                    <div className={`text-lg font-black ${m.c}`}>{m.v}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Financial Health */}
+                                    <div>
+                                        <h4 className="text-xs font-bold text-secondary uppercase tracking-wider mb-3">Financial Health</h4>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                            {[
+                                                {l:'D/E Ratio', v: screenerData.debt_to_equity, c: screenerData.debt_to_equity < 50 ? 'text-green-400' : screenerData.debt_to_equity < 100 ? 'text-yellow-400' : 'text-red-400'},
+                                                {l:'Current Ratio', v: screenerData.current_ratio, c: screenerData.current_ratio >= 1.5 ? 'text-green-400' : screenerData.current_ratio >= 1 ? 'text-yellow-400' : 'text-red-400'},
+                                                {l:'Net Margin', v: `${screenerData.net_profit_margin}%`, c: screenerData.net_profit_margin > 15 ? 'text-green-400' : 'text-primary'},
+                                                {l:'Op. Margin', v: `${screenerData.operating_margin}%`, c: screenerData.operating_margin > 20 ? 'text-green-400' : 'text-primary'},
+                                            ].map((m,i) => (
+                                                <div key={i} className="dark-card rounded-xl p-3">
+                                                    <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 font-bold">{m.l}</div>
+                                                    <div className={`text-lg font-black ${m.c}`}>{m.v}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Growth + Shareholding Row */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                        {/* Growth */}
+                                        <div className="dark-card rounded-2xl p-5">
+                                            <h4 className="text-xs font-bold text-secondary uppercase tracking-wider mb-4">Growth Metrics</h4>
+                                            <div className="space-y-4">
+                                                {[
+                                                    {l:'Sales CAGR (5Y)', v: screenerData.sales_cagr_5yr},
+                                                    {l:'Profit CAGR (5Y)', v: screenerData.profit_cagr_5yr},
+                                                    {l:'Revenue Growth (YoY)', v: screenerData.revenue_growth},
+                                                    {l:'Earnings Growth (YoY)', v: screenerData.earnings_growth},
+                                                ].map((g,i) => (
+                                                    <div key={i}>
+                                                        <div className="flex justify-between text-sm mb-1">
+                                                            <span className="text-secondary">{g.l}</span>
+                                                            <span className={`font-bold ${g.v > 10 ? 'text-green-400' : g.v > 0 ? 'text-yellow-400' : 'text-red-400'}`}>
+                                                                {g.v > 0 ? '+' : ''}{g.v}%
+                                                            </span>
+                                                        </div>
+                                                        <div className="w-full bg-slate-700/40 rounded-full h-2 overflow-hidden">
+                                                            <div className={`h-full rounded-full transition-all duration-700 ${g.v > 10 ? 'bg-green-500' : g.v > 0 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                                                style={{width: `${Math.min(100, Math.max(5, Math.abs(g.v) * 2))}%`}}></div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Shareholding */}
+                                        <div className="dark-card rounded-2xl p-5">
+                                            <h4 className="text-xs font-bold text-secondary uppercase tracking-wider mb-4">Shareholding Pattern</h4>
+                                            <div className="space-y-4">
+                                                {[
+                                                    {l:'FII / Institutional', v: screenerData.institutional_holding, color:'bg-blue-500', tc:'text-blue-400'},
+                                                    {l:'Promoter / Insider', v: screenerData.insider_holding, color:'bg-purple-500', tc:'text-purple-400'},
+                                                    {l:'Public / Others', v: screenerData.public_holding, color:'bg-slate-500', tc:'text-slate-400'},
+                                                ].map((s,i) => (
+                                                    <div key={i}>
+                                                        <div className="flex justify-between text-sm mb-1">
+                                                            <span className="text-secondary">{s.l}</span>
+                                                            <span className={`font-bold ${s.tc}`}>{s.v}%</span>
+                                                        </div>
+                                                        <div className="w-full bg-slate-700/40 rounded-full h-3 overflow-hidden">
+                                                            <div className={`h-full rounded-full ${s.color} transition-all duration-700`}
+                                                                style={{width: `${Math.min(100, s.v)}%`}}></div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Quarterly Results */}
+                                    {screenerData.quarterly && screenerData.quarterly.length > 0 && (
+                                        <div>
+                                            <h4 className="text-xs font-bold text-secondary uppercase tracking-wider mb-3">Quarterly Performance</h4>
+                                            <div className="dark-card rounded-2xl overflow-hidden">
+                                                <table className="w-full text-sm">
+                                                    <thead>
+                                                        <tr className="border-b border-border text-xs text-secondary uppercase">
+                                                            <th className="px-4 py-3 text-left font-bold">Quarter</th>
+                                                            <th className="px-4 py-3 text-right font-bold">Revenue</th>
+                                                            <th className="px-4 py-3 text-right font-bold">Net Income</th>
+                                                            <th className="px-4 py-3 text-right font-bold">Margin</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-border">
+                                                        {screenerData.quarterly.map((q,i) => (
+                                                            <tr key={i} className="hover:bg-slate-500/5">
+                                                                <td className="px-4 py-3 font-bold text-primary">{q.quarter}</td>
+                                                                <td className="px-4 py-3 text-right text-secondary font-mono">{q.revenue_fmt}</td>
+                                                                <td className={`px-4 py-3 text-right font-mono font-bold ${q.net_income >= 0 ? 'text-green-400' : 'text-red-400'}`}>{q.net_income_fmt}</td>
+                                                                <td className={`px-4 py-3 text-right font-bold ${q.margin > 0 ? 'text-green-400' : 'text-red-400'}`}>{q.margin}%</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Action */}
+                                    <div className="flex justify-center pt-2 pb-2">
+                                        <button onClick={() => { setTicker(screenerData.display_symbol); setShowScreener(false); setScreenerData(null); handleManualSearch({preventDefault:()=>{}}); }}
+                                            className="btn-purple px-8 py-3 rounded-2xl text-sm font-bold flex items-center gap-2">
+                                            <span>📈</span> Full Technical Analysis
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

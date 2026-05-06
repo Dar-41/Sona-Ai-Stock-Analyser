@@ -68,6 +68,16 @@ const App = () => {
     const [showScreenerSuggestions, setShowScreenerSuggestions] = useState(false);
     const [filteredScreenerSuggestions, setFilteredScreenerSuggestions] = useState([]);
 
+    // Feature States
+    const [newsData, setNewsData] = useState(null);
+    const [showPortfolio, setShowPortfolio] = useState(false);
+    const [portfolioData, setPortfolioData] = useState(null);
+    const [portfolioAmount, setPortfolioAmount] = useState(100000);
+    const [portfolioRisk, setPortfolioRisk] = useState("Moderate");
+    const [portfolioLoading, setPortfolioLoading] = useState(false);
+    const [heatmapData, setHeatmapData] = useState([]);
+    const [heatmapLoading, setHeatmapLoading] = useState(false);
+
     // Risk Calculator State
     const [accountBalance, setAccountBalance] = useState(10000);
     const [riskPercent, setRiskPercent] = useState(1);
@@ -214,6 +224,21 @@ const App = () => {
         }, 300);
         return () => clearTimeout(t);
     }, [showScreener, screenerData]);
+
+    useEffect(() => {
+        if (showHeatmap && heatmapSource === 'NIFTY50') {
+            fetchHeatmapData();
+        }
+    }, [showHeatmap, heatmapSource]);
+
+    useEffect(() => {
+        if (showPortfolio || showInsights || showHeatmap) {
+            const t = setTimeout(() => {
+                if (window.lucide && window.lucide.createIcons) window.lucide.createIcons();
+            }, 300);
+            return () => clearTimeout(t);
+        }
+    }, [showPortfolio, showInsights, showHeatmap, portfolioData, heatmapData]);
 
     // Initialize Chart
     useEffect(() => {
@@ -465,6 +490,13 @@ const App = () => {
                 if (result.analysis.trade_levels) {
                     setStopLoss(result.analysis.trade_levels.stop_loss);
                 }
+
+                // Fetch news in background
+                setNewsData(null);
+                fetch(`/api/news/${ticker}`)
+                    .then(res => res.json())
+                    .then(data => setNewsData(data))
+                    .catch(err => console.log('News fetch error:', err));
             } else {
                 setStatus('No data found for this symbol');
                 setMarketData(null);
@@ -477,6 +509,36 @@ const App = () => {
             console.error('Fetch error:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchPortfolio = async () => {
+        setPortfolioLoading(true);
+        try {
+            const response = await fetch('/api/portfolio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: portfolioAmount, risk_profile: portfolioRisk })
+            });
+            const data = await response.json();
+            setPortfolioData(data);
+        } catch (error) {
+            console.error('Portfolio fetch error:', error);
+        } finally {
+            setPortfolioLoading(false);
+        }
+    };
+
+    const fetchHeatmapData = async () => {
+        setHeatmapLoading(true);
+        try {
+            const response = await fetch('/api/heatmap/nifty');
+            const data = await response.json();
+            setHeatmapData(data);
+        } catch (error) {
+            console.error('Heatmap fetch error:', error);
+        } finally {
+            setHeatmapLoading(false);
         }
     };
 
@@ -674,6 +736,13 @@ const App = () => {
                         Market Map
                     </button>
                     <button
+                        onClick={() => { setShowPortfolio(true); if (!portfolioData) fetchPortfolio(); }}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${showPortfolio ? 'btn-purple' : 'btn-dark'}`}
+                    >
+                        <i data-lucide="pie-chart" className="w-4 h-4"></i>
+                        Portfolio
+                    </button>
+                    <button
                         onClick={() => setShowScreener(true)}
                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${showScreener ? 'btn-purple' : 'btn-dark'}`}
                     >
@@ -718,9 +787,237 @@ const App = () => {
                                 Back to Dashboard
                             </button>
                         </div>
-                        <div className="flex-1 bg-slate-900 relative">
-                            <TradingViewHeatmap theme={theme} dataSource={heatmapSource} />
+                        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar bg-slate-950/20">
+                            <div className="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 className="text-lg font-black text-primary">Nifty 50 Performance</h3>
+                                    <p className="text-xs text-secondary font-bold uppercase tracking-widest">Real-time Sector Strength</p>
+                                </div>
+                                <button 
+                                    onClick={fetchHeatmapData}
+                                    className="p-2 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-all"
+                                    title="Refresh Data"
+                                >
+                                    <i data-lucide="refresh-cw" className={`w-4 h-4 ${heatmapLoading ? 'animate-spin' : ''}`}></i>
+                                </button>
+                            </div>
+
+                            {heatmapLoading && heatmapData.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-64">
+                                    <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+                                    <p className="text-secondary font-bold animate-pulse">Scanning Nifty 50...</p>
+                                </div>
+                            ) : heatmapSource === 'NIFTY50' ? (
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                                    {heatmapData.map((stock) => (
+                                        <button
+                                            key={stock.symbol}
+                                            onClick={() => { setTicker(stock.symbol + '.NS'); handleManualSearch({ preventDefault: () => { } }); setShowHeatmap(false); }}
+                                            className={`p-4 rounded-2xl flex flex-col justify-between aspect-square transition-all hover:scale-105 hover:shadow-xl ${
+                                                stock.change > 1.5 ? 'bg-green-600/90 text-white shadow-green-500/10' :
+                                                stock.change > 0 ? 'bg-green-900/40 text-green-300 border border-green-700/50' :
+                                                stock.change < -1.5 ? 'bg-red-600/90 text-white shadow-red-500/10' :
+                                                stock.change < 0 ? 'bg-red-900/40 text-red-300 border border-red-700/50' :
+                                                'bg-slate-800 border border-border text-slate-400'
+                                            }`}
+                                        >
+                                            <div className="flex justify-between items-start w-full">
+                                                <span className="font-black text-lg leading-none">{stock.symbol}</span>
+                                                <div className="w-1.5 h-1.5 rounded-full bg-white/30"></div>
+                                            </div>
+                                            <div className="text-right w-full">
+                                                <div className="text-2xl font-black tracking-tighter leading-none mb-1">
+                                                    {stock.change > 0 ? '+' : ''}{stock.change}%
+                                                </div>
+                                                <div className="text-[10px] font-bold opacity-70">₹{stock.price}</div>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="h-full bg-black rounded-2xl overflow-hidden">
+                                    <iframe
+                                        src={`https://s.tradingview.com/embed-widget/crypto-mkt-screener/?locale=en#${encodeURIComponent(JSON.stringify({
+                                            "width": "100%",
+                                            "height": "100%",
+                                            "defaultColumn": "overview",
+                                            "screener_type": "crypto_mkt",
+                                            "displayCurrency": "USD",
+                                            "colorTheme": theme,
+                                            "market": "crypto"
+                                        }))}`}
+                                        style={{ width: '100%', height: '100%', border: 'none' }}
+                                    />
+                                </div>
+                            )}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Portfolio Architect Modal */}
+            {showPortfolio && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+                    <div className="bg-card w-full max-w-5xl max-h-[90vh] rounded-[2.5rem] shadow-2xl border border-border flex flex-col overflow-hidden fade-in-up">
+                        {/* Modal Header */}
+                        <div className="p-8 border-b border-border flex justify-between items-center bg-card">
+                            <div>
+                                <h2 className="text-2xl font-black text-primary flex items-center gap-3">
+                                    <i data-lucide="pie-chart" className="text-purple-400 w-8 h-8"></i>
+                                    AI Portfolio Architect
+                                </h2>
+                                <p className="text-sm text-secondary font-medium">Algorithmic asset allocation based on risk-reward profiling</p>
+                            </div>
+                            <button
+                                onClick={() => setShowPortfolio(false)}
+                                className="p-3 rounded-full hover:bg-slate-500/10 text-secondary hover:text-primary transition-all"
+                            >
+                                <i data-lucide="x" className="w-6 h-6"></i>
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                {/* Configuration Sidebar */}
+                                <div className="space-y-6">
+                                    <div className="dark-card rounded-3xl p-6 space-y-6">
+                                        <div>
+                                            <label className="block text-xs font-bold text-secondary uppercase tracking-widest mb-3">Investment Capital</label>
+                                            <div className="relative">
+                                                <span className="absolute left-4 top-3.5 text-secondary font-bold">₹</span>
+                                                <input
+                                                    type="number"
+                                                    value={portfolioAmount}
+                                                    onChange={(e) => setPortfolioAmount(Number(e.target.value))}
+                                                    className="w-full bg-slate-900 border border-border rounded-2xl pl-10 pr-4 py-4 text-xl font-black text-primary focus:border-purple-500 outline-none transition-all"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold text-secondary uppercase tracking-widest mb-3">Risk Appetite</label>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {['Conservative', 'Moderate', 'Aggressive'].map(risk => (
+                                                    <button
+                                                        key={risk}
+                                                        onClick={() => setPortfolioRisk(risk)}
+                                                        className={`py-3 px-4 rounded-xl text-sm font-bold border-2 transition-all text-left flex justify-between items-center ${
+                                                            portfolioRisk === risk 
+                                                            ? 'bg-purple-500/10 border-purple-500 text-purple-400' 
+                                                            : 'bg-slate-900 border-transparent text-secondary hover:border-slate-700'
+                                                        }`}
+                                                    >
+                                                        {risk}
+                                                        {portfolioRisk === risk && <i data-lucide="check-circle" className="w-4 h-4"></i>}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={fetchPortfolio}
+                                            disabled={portfolioLoading}
+                                            className="w-full btn-purple py-4 rounded-2xl font-black text-lg shadow-xl shadow-purple-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                        >
+                                            {portfolioLoading ? <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></div> : 'Generate Plan ⚡'}
+                                        </button>
+                                    </div>
+
+                                    {portfolioData && (
+                                        <div className="bg-purple-600/10 border border-purple-500/30 rounded-3xl p-6 text-center">
+                                            <div className="text-xs font-bold text-purple-400 uppercase tracking-widest mb-1">Projected Annual Return</div>
+                                            <div className="text-3xl font-black text-purple-400">{portfolioData.projected_annual_return}</div>
+                                            <p className="text-[10px] text-slate-500 mt-2 italic">*Based on historical sector performance</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Results Area */}
+                                <div className="lg:col-span-2">
+                                    {portfolioData ? (
+                                        <div className="space-y-6">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {portfolioData.allocations.map((item, idx) => (
+                                                    <div key={idx} className="dark-card rounded-[2rem] p-6 hover:shadow-xl transition-all border border-border/50">
+                                                        <div className="flex justify-between items-start mb-4">
+                                                            <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-2xl">
+                                                                {idx === 0 ? '🏆' : idx === 1 ? '🚀' : '💎'}
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <div className="text-2xl font-black text-primary">{item.percentage}%</div>
+                                                                <div className="text-xs text-secondary font-bold uppercase tracking-widest">Allocation</div>
+                                                            </div>
+                                                        </div>
+                                                        <h4 className="text-lg font-black text-primary mb-1">{item.category}</h4>
+                                                        <div className="text-xl font-bold text-purple-400 mb-4">₹{item.amount.toLocaleString()}</div>
+                                                        
+                                                        <div className="space-y-2">
+                                                            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Suggested Tickers</div>
+                                                            <div className="flex flex-wrap gap-1.5">
+                                                                {item.suggested_stocks.map(stock => (
+                                                                    <button 
+                                                                        key={stock}
+                                                                        onClick={() => { setTicker(stock + '.NS'); handleManualSearch({ preventDefault: () => {} }); setShowPortfolio(false); }}
+                                                                        className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[11px] font-black text-primary hover:border-purple-500 transition-all"
+                                                                    >
+                                                                        {stock}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+
+                                            {/* Allocation Donut Chart Placeholder */}
+                                            <div className="dark-card rounded-[2.5rem] p-8 flex flex-col md:flex-row items-center gap-8">
+                                                <div className="relative w-48 h-48 flex-shrink-0">
+                                                    <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                                                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#1E293B" strokeWidth="20" />
+                                                        {portfolioData.allocations.reduce((acc, curr, i) => {
+                                                            const strokeDasharray = `${curr.percentage} 100`;
+                                                            const strokeDashoffset = -acc;
+                                                            acc += curr.percentage;
+                                                            const colors = ['#8b5cf6', '#3b82f6', '#10b981'];
+                                                            return [...acc[0] || [], <circle key={i} cx="50" cy="50" r="40" fill="transparent" stroke={colors[i]} strokeWidth="20" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} />];
+                                                        }, [[]])[0]}
+                                                    </svg>
+                                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                        <div className="text-xs text-secondary font-bold uppercase tracking-widest">Total</div>
+                                                        <div className="text-lg font-black text-primary">100%</div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex-1 space-y-4 w-full">
+                                                    <h4 className="text-xl font-black text-primary">Allocation Mix</h4>
+                                                    <div className="space-y-3">
+                                                        {portfolioData.allocations.map((item, i) => (
+                                                            <div key={i} className="flex justify-between items-center">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className={`w-3 h-3 rounded-full ${i === 0 ? 'bg-purple-500' : i === 1 ? 'bg-blue-500' : 'bg-emerald-500'}`}></div>
+                                                                    <span className="text-sm font-bold text-secondary">{item.category}</span>
+                                                                </div>
+                                                                <span className="text-sm font-black text-primary">{item.percentage}%</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-full py-20 text-center opacity-50">
+                                            <div className="w-24 h-24 mb-6 rounded-full bg-slate-900 flex items-center justify-center">
+                                                <i data-lucide="layout" className="w-12 h-12 text-slate-700"></i>
+                                            </div>
+                                            <h3 className="text-xl font-black text-primary">Ready to Architect</h3>
+                                            <p className="text-sm text-secondary max-w-xs mt-2 font-medium">Adjust your capital and risk appetite then hit Generate to build your institutional-grade portfolio.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
                     </div>
                 </div>
             )}
@@ -1353,6 +1650,49 @@ const App = () => {
                                 <div className="text-xs text-slate-500 mt-2 text-center">
                                     Day {analysis.moon_phase.days_in_cycle} of 29.53
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* News Sentiment Card */}
+                    {newsData && newsData.news && newsData.news.length > 0 && (
+                        <div className="glass-card rounded-3xl p-5 fade-in-up" style={{ animationDelay: '0.3s' }}>
+                            <h3 className="text-xs font-bold mb-4 text-secondary uppercase tracking-wider flex items-center gap-2">
+                                <span className="text-sm">📰</span> Live AI Sentiment
+                            </h3>
+                            
+                            <div className="flex items-center gap-4 mb-4 bg-slate-500/10 p-4 rounded-2xl">
+                                <div className="flex-1">
+                                    <div className="text-xs text-slate-500 font-bold uppercase mb-1">Overall Sentiment</div>
+                                    <div className={`text-lg font-black ${
+                                        newsData.sentiment.includes('Bullish') ? 'text-green-400' :
+                                        newsData.sentiment.includes('Bearish') ? 'text-red-400' : 'text-slate-400'
+                                    }`}>
+                                        {newsData.sentiment}
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-3xl font-black text-primary drop-shadow-md">
+                                        {newsData.score > 0 ? '+' : ''}{newsData.score}
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 font-bold uppercase">AI Score</div>
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                {newsData.news.slice(0, 5).map((item, idx) => (
+                                    <a key={idx} href={item.link} target="_blank" rel="noopener noreferrer" className="block p-3 rounded-xl hover:bg-slate-500/5 border border-transparent hover:border-border transition-all">
+                                        <div className="flex justify-between items-start gap-2 mb-1">
+                                            <div className="text-xs font-semibold text-primary line-clamp-2 leading-tight">{item.title}</div>
+                                            {item.sentiment === 'Bullish' && <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 mt-1"></span>}
+                                            {item.sentiment === 'Bearish' && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1"></span>}
+                                        </div>
+                                        <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2">
+                                            <span>{item.publisher}</span>
+                                            <span>{new Date(item.timestamp * 1000).toLocaleDateString()}</span>
+                                        </div>
+                                    </a>
+                                ))}
                             </div>
                         </div>
                     )}

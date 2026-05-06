@@ -1255,7 +1255,7 @@ async def get_screener_data(symbol: str):
             "forward_eps": round(info.get('forwardEps', 0) or 0, 2),
             "roe": round(roe_raw * 100, 2) if roe_raw else 0,
             "roce": roce,
-            "dividend_yield": round((info.get('dividendYield', 0) or 0) * 100, 2),
+            "dividend_yield": round((info.get('dividendYield', 0) or 0) * 100, 2) if (info.get('dividendYield', 0) or 0) < 1.0 else round((info.get('dividendYield', 0) or 0), 2),
             "payout_ratio": round((info.get('payoutRatio', 0) or 0) * 100, 2),
             
             # Financial Health
@@ -1429,25 +1429,43 @@ async def get_heatmap():
         
         tickers = "RELIANCE.NS TCS.NS HDFCBANK.NS INFY.NS ICICIBANK.NS HINDUNILVR.NS SBIN.NS BHARTIARTL.NS ITC.NS BAJFINANCE.NS KOTAKBANK.NS LT.NS HCLTECH.NS ASIANPAINT.NS AXISBANK.NS MARUTI.NS SUNPHARMA.NS TITAN.NS ULTRACEMCO.NS BAJAJFINSV.NS TATASTEEL.NS TATAMOTORS.NS NTPC.NS NESTLEIND.NS M&M.NS POWERGRID.NS JSWSTEEL.NS HINDALCO.NS ADANIENT.NS ONGC.NS TECHM.NS GRASIM.NS WIPRO.NS COALINDIA.NS DRREDDY.NS HDFCLIFE.NS SBILIFE.NS ADANIPORTS.NS BAJAJ-AUTO.NS EICHERMOT.NS DIVISLAB.NS CIPLA.NS APOLLOHOSP.NS TATACONSUM.NS BRITANNIA.NS HEROMOTOCO.NS LTIM.NS SHREECEM.NS UPL.NS"
         
-        data = yf.download(tickers, period="2d", group_by="ticker", progress=False)
+        data = yf.download(tickers, period="2d", group_by="ticker", progress=False, threads=True)
         
         results = []
         import random
-        for symbol in tickers.split():
+        
+        # Handle cases where yf.download might return a different structure for single/no results
+        ticker_list = tickers.split()
+        for symbol in ticker_list:
             try:
-                if symbol in data:
-                    stock_data = data[symbol]
+                # Get stock data for this symbol
+                if isinstance(data.columns, pd.MultiIndex):
+                    if symbol in data.columns.levels[0]:
+                        stock_data = data[symbol]
+                    else:
+                        continue
                 else:
-                    stock_data = data
-                    
-                if len(stock_data) >= 2:
-                    prev_close = stock_data['Close'].iloc[-2]
+                    if len(ticker_list) == 1:
+                        stock_data = data
+                    else:
+                        continue
+                        
+                if stock_data is not None and len(stock_data) >= 1:
                     current = stock_data['Close'].iloc[-1]
-                    change_pct = ((current - prev_close) / prev_close) * 100
                     
-                    # Randomize market cap weight slightly for a more dynamic treemap look if exact data isn't fetched
+                    if len(stock_data) >= 2:
+                        prev_close = stock_data['Close'].iloc[-2]
+                        change_pct = ((current - prev_close) / prev_close) * 100
+                    else:
+                        # Fallback to previous close from info if only 1 day returned
+                        change_pct = 0 
+                    
+                    if pd.isna(current) or pd.isna(change_pct):
+                        continue
+
+                    # Randomize market cap weight slightly for a more dynamic treemap look
                     weight = random.randint(50, 150)
-                    if symbol in ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS']: weight = random.randint(250, 350)
+                    if symbol in ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS']: weight = random.randint(250, 350)
                     
                     results.append({
                         "symbol": symbol.replace('.NS', ''),
@@ -1456,8 +1474,12 @@ async def get_heatmap():
                         "weight": weight
                     })
             except Exception as e:
+                print(f"[HEATMAP] Symbol {symbol} error: {e}")
                 continue
                 
+        if not results:
+            return JSONResponse(content={"error": "No heatmap data available at this time"}, status_code=503)
+
         # Sort by change for standard heatmap
         results.sort(key=lambda x: x['change'], reverse=True)
         set_cache(cache_key, results, ttl_seconds=300)

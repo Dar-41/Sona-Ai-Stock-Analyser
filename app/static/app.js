@@ -534,7 +534,7 @@ const App = () => {
         try {
             const response = await fetch('/api/heatmap/nifty');
             const data = await response.json();
-            setHeatmapData(data);
+            setHeatmapData(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Heatmap fetch error:', error);
         } finally {
@@ -889,7 +889,7 @@ const App = () => {
                                                     type="number"
                                                     value={portfolioAmount}
                                                     onChange={(e) => setPortfolioAmount(Number(e.target.value))}
-                                                    className="w-full bg-slate-900 border border-border rounded-2xl pl-10 pr-4 py-4 text-xl font-black text-primary focus:border-purple-500 outline-none transition-all"
+                                                    className="w-full bg-slate-900 border border-border rounded-2xl pl-10 pr-4 py-4 text-xl font-black text-white focus:border-purple-500 outline-none transition-all placeholder-slate-600"
                                                 />
                                             </div>
                                         </div>
@@ -1665,7 +1665,7 @@ const App = () => {
                     )}
 
                     {/* News Sentiment Card */}
-                    {newsData && newsData.news && newsData.news.length > 0 && (
+                    {newsData && (newsData.news || newsData.sentiment) && (
                         <div className="glass-card rounded-3xl p-5 fade-in-up" style={{ animationDelay: '0.3s' }}>
                             <h3 className="text-xs font-bold mb-4 text-secondary uppercase tracking-wider flex items-center gap-2">
                                 <span className="text-sm">📰</span> Live AI Sentiment
@@ -1675,35 +1675,39 @@ const App = () => {
                                 <div className="flex-1">
                                     <div className="text-xs text-slate-500 font-bold uppercase mb-1">Overall Sentiment</div>
                                     <div className={`text-lg font-black ${
-                                        newsData.sentiment.includes('Bullish') ? 'text-green-400' :
-                                        newsData.sentiment.includes('Bearish') ? 'text-red-400' : 'text-slate-400'
+                                        newsData.sentiment?.includes('Bullish') ? 'text-green-400' :
+                                        newsData.sentiment?.includes('Bearish') ? 'text-red-400' : 'text-slate-400'
                                     }`}>
-                                        {newsData.sentiment}
+                                        {newsData.sentiment || 'Neutral'}
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <div className="text-3xl font-black text-primary drop-shadow-md">
-                                        {newsData.score > 0 ? '+' : ''}{newsData.score}
+                                        {newsData.score > 0 ? '+' : ''}{newsData.score || 0}
                                     </div>
                                     <div className="text-[10px] text-slate-500 font-bold uppercase">AI Score</div>
                                 </div>
                             </div>
                             
-                            <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                                {newsData.news.slice(0, 5).map((item, idx) => (
-                                    <a key={idx} href={item.link} target="_blank" rel="noopener noreferrer" className="block p-3 rounded-xl hover:bg-slate-500/5 border border-transparent hover:border-border transition-all">
-                                        <div className="flex justify-between items-start gap-2 mb-1">
-                                            <div className="text-xs font-semibold text-primary line-clamp-2 leading-tight">{item.title}</div>
-                                            {item.sentiment === 'Bullish' && <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 mt-1"></span>}
-                                            {item.sentiment === 'Bearish' && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1"></span>}
-                                        </div>
-                                        <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2">
-                                            <span>{item.publisher}</span>
-                                            <span>{new Date(item.timestamp * 1000).toLocaleDateString()}</span>
-                                        </div>
-                                    </a>
-                                ))}
-                            </div>
+                            {newsData.news && newsData.news.length > 0 ? (
+                                <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                    {newsData.news.slice(0, 5).map((item, idx) => (
+                                        <a key={idx} href={item.link} target="_blank" rel="noopener noreferrer" className="block p-3 rounded-xl hover:bg-slate-500/5 border border-transparent hover:border-border transition-all">
+                                            <div className="flex justify-between items-start gap-2 mb-1">
+                                                <div className="text-xs font-semibold text-primary line-clamp-2 leading-tight">{item.title}</div>
+                                                {item.sentiment === 'Bullish' && <span className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 mt-1"></span>}
+                                                {item.sentiment === 'Bearish' && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 mt-1"></span>}
+                                            </div>
+                                            <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2">
+                                                <span>{item.publisher}</span>
+                                                <span>{item.timestamp ? new Date(item.timestamp * 1000).toLocaleDateString() : ''}</span>
+                                            </div>
+                                        </a>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-4 text-xs text-secondary italic">No recent news headlines available for this symbol.</div>
+                            )}
                         </div>
                     )}
 

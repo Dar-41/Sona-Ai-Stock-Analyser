@@ -974,13 +974,26 @@ const App = () => {
                                                 <div className="relative w-48 h-48 flex-shrink-0">
                                                     <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
                                                         <circle cx="50" cy="50" r="40" fill="transparent" stroke="#1E293B" strokeWidth="20" />
-                                                        {portfolioData.allocations.reduce((acc, curr, i) => {
-                                                            const strokeDasharray = `${curr.percentage} 100`;
-                                                            const strokeDashoffset = -acc;
-                                                            acc += curr.percentage;
+                                                        {(() => {
+                                                            let currentOffset = 0;
                                                             const colors = ['#8b5cf6', '#3b82f6', '#10b981'];
-                                                            return [...acc[0] || [], <circle key={i} cx="50" cy="50" r="40" fill="transparent" stroke={colors[i]} strokeWidth="20" strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} />];
-                                                        }, [[]])[0]}
+                                                            return portfolioData.allocations.map((item, i) => {
+                                                                const strokeDasharray = `${item.percentage} 100`;
+                                                                const dashOffset = -currentOffset;
+                                                                currentOffset += item.percentage;
+                                                                return (
+                                                                    <circle 
+                                                                        key={i} 
+                                                                        cx="50" cy="50" r="40" 
+                                                                        fill="transparent" 
+                                                                        stroke={colors[i % colors.length]} 
+                                                                        strokeWidth="20" 
+                                                                        strokeDasharray={strokeDasharray} 
+                                                                        strokeDashoffset={dashOffset} 
+                                                                    />
+                                                                );
+                                                            });
+                                                        })()}
                                                     </svg>
                                                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                                                         <div className="text-xs text-secondary font-bold uppercase tracking-widest">Total</div>
@@ -1015,9 +1028,6 @@ const App = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            )}
                     </div>
                 </div>
             )}

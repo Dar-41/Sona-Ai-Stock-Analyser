@@ -60,7 +60,7 @@ templates = Jinja2Templates(directory="app/static")
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     try:
-        return templates.TemplateResponse("landing.html", {"request": request})
+        return templates.TemplateResponse(request, "landing.html")
     except Exception as e:
         logger.error(f"Error serving landing page: {e}")
         return HTMLResponse(
@@ -71,7 +71,7 @@ async def read_root(request: Request):
 @app.get("/dashboard", response_class=HTMLResponse)
 async def read_dashboard(request: Request):
     try:
-        return templates.TemplateResponse("index.html", {"request": request})
+        return templates.TemplateResponse(request, "index.html")
     except Exception as e:
         logger.error(f"Error serving dashboard: {e}")
         return HTMLResponse(
@@ -82,7 +82,7 @@ async def read_dashboard(request: Request):
 @app.get("/about", response_class=HTMLResponse)
 async def read_about(request: Request):
     try:
-        return templates.TemplateResponse("about.html", {"request": request})
+        return templates.TemplateResponse(request, "about.html")
     except Exception as e:
         logger.error(f"Error serving about page: {e}")
         return HTMLResponse(
@@ -93,7 +93,7 @@ async def read_about(request: Request):
 @app.get("/screener", response_class=HTMLResponse)
 async def read_screener(request: Request):
     try:
-        return templates.TemplateResponse("index.html", {"request": request})
+        return templates.TemplateResponse(request, "index.html")
     except Exception as e:
         logger.error(f"Error serving screener: {e}")
         return HTMLResponse(

@@ -65,6 +65,8 @@ const App = () => {
     const [screenerData, setScreenerData] = useState(null);
     const [screenerLoading, setScreenerLoading] = useState(false);
     const [screenerError, setScreenerError] = useState(null);
+    const [showScreenerSuggestions, setShowScreenerSuggestions] = useState(false);
+    const [filteredScreenerSuggestions, setFilteredScreenerSuggestions] = useState([]);
 
     // Risk Calculator State
     const [accountBalance, setAccountBalance] = useState(10000);
@@ -74,9 +76,10 @@ const App = () => {
     const chartContainerRef = useRef(null);
     const chartInstanceRef = useRef(null);
     const searchRef = useRef(null);
+    const screenerSearchRef = useRef(null);
 
     // Popular symbols organized by category
-    const popularSymbols = [
+    const [popularSymbols, setPopularSymbols] = useState([
         // Forex & Commodities
         { symbol: 'XAUUSD', name: 'Gold / U.S. Dollar', category: 'Forex', icon: '🥇' },
         { symbol: 'XAGUSD', name: 'Silver / U.S. Dollar', category: 'Commodities', icon: '🥈' },
@@ -172,7 +175,20 @@ const App = () => {
         { symbol: 'ASIANPAINT', name: 'Asian Paints', category: 'Indian Stocks', icon: '🇮🇳' },
         { symbol: 'INDUSINDBK', name: 'IndusInd Bank', category: 'Indian Stocks', icon: '🇮🇳' },
         { symbol: 'HEROMOTOCO', name: 'Hero MotoCorp', category: 'Indian Stocks', icon: '🇮🇳' },
-    ];
+    ]);
+
+    useEffect(() => {
+        fetch('/static/indian_stocks.json')
+            .then(res => res.json())
+            .then(data => {
+                setPopularSymbols(prev => {
+                    const existing = new Set(prev.map(s => s.symbol));
+                    const newStocks = data.filter(s => !existing.has(s.symbol));
+                    return [...prev, ...newStocks];
+                });
+            })
+            .catch(err => console.error("Failed to load NSE stocks:", err));
+    }, []);
 
     useEffect(() => {
         // Set theme attribute
@@ -399,7 +415,7 @@ const App = () => {
                 item.symbol.includes(value) ||
                 item.name.toUpperCase().includes(value)
             );
-            setFilteredSuggestions(filtered);
+            setFilteredSuggestions(filtered.slice(0, 50));
             setShowSuggestions(true);
         } else {
             setFilteredSuggestions(popularSymbols.slice(0, 10));
@@ -418,6 +434,9 @@ const App = () => {
         const handleClickOutside = (event) => {
             if (searchRef.current && !searchRef.current.contains(event.target)) {
                 setShowSuggestions(false);
+            }
+            if (screenerSearchRef.current && !screenerSearchRef.current.contains(event.target)) {
+                setShowScreenerSuggestions(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -486,8 +505,33 @@ const App = () => {
         }
     };
 
+    const handleScreenerSearchInput = (e) => {
+        const value = e.target.value.toUpperCase();
+        setScreenerTicker(value);
+
+        if (value.length > 0) {
+            const filtered = popularSymbols.filter(item =>
+                item.symbol.includes(value) ||
+                item.name.toUpperCase().includes(value)
+            );
+            setFilteredScreenerSuggestions(filtered.slice(0, 50));
+            setShowScreenerSuggestions(true);
+        } else {
+            setFilteredScreenerSuggestions(popularSymbols.slice(0, 10));
+            setShowScreenerSuggestions(false);
+        }
+    };
+
+    const handleSelectScreenerSuggestion = (symbol) => {
+        if (typeof symbol === 'string') {
+            setScreenerTicker(symbol);
+            setShowScreenerSuggestions(false);
+            handleScreenerSearch(symbol);
+        }
+    };
+
     const handleScreenerSearch = async (symbol) => {
-        const target = symbol || screenerTicker;
+        const target = typeof symbol === 'string' ? symbol : screenerTicker;
         if (!target) return;
 
         setScreenerLoading(true);
@@ -710,15 +754,39 @@ const App = () => {
 
                         {/* Search */}
                         <div className="p-5 border-b border-border">
-                            <form onSubmit={(e) => { e.preventDefault(); handleScreenerSearch(); }} className="flex gap-3">
-                                <input type="text" value={screenerTicker}
-                                    onChange={(e) => setScreenerTicker(e.target.value.toUpperCase())}
-                                    placeholder="Enter stock symbol (e.g. RELIANCE, TCS, AAPL)"
-                                    className="flex-1 input-modern rounded-2xl px-5 py-3 text-sm font-medium" autoComplete="off" />
-                                <button type="submit" className="btn-purple px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2">
-                                    <span className="text-sm">🔎</span> Screen
-                                </button>
-                            </form>
+                            <div ref={screenerSearchRef} className="relative">
+                                <form onSubmit={(e) => { e.preventDefault(); handleScreenerSearch(); }} className="flex gap-3 relative">
+                                    <input type="text" value={screenerTicker}
+                                        onChange={handleScreenerSearchInput}
+                                        onFocus={() => setShowScreenerSuggestions(true)}
+                                        placeholder="Enter stock symbol (e.g. RELIANCE, TCS, AAPL)"
+                                        className="flex-1 input-modern rounded-2xl px-5 py-3 text-sm font-medium" autoComplete="off" />
+                                    <button type="submit" className="btn-purple px-6 py-3 rounded-2xl text-sm font-bold flex items-center gap-2">
+                                        <span className="text-sm">🔎</span> Screen
+                                    </button>
+                                </form>
+                                {/* Suggestions Dropdown */}
+                                {showScreenerSuggestions && filteredScreenerSuggestions.length > 0 && (
+                                    <div className="absolute z-50 w-full mt-2 glass-card rounded-2xl shadow-2xl max-h-80 overflow-hidden slide-in" style={{ width: 'calc(100% - 130px)' }}>
+                                        <div className="overflow-y-auto max-h-80">
+                                            {filteredScreenerSuggestions.map((item, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    onClick={() => handleSelectScreenerSuggestion(item.symbol)}
+                                                    className="flex items-center gap-3 px-4 py-3 hover:bg-purple-500/10 cursor-pointer transition-colors border-b border-border last:border-0"
+                                                >
+                                                    <span className="text-xl">{item.icon}</span>
+                                                    <div className="flex-1">
+                                                        <div className="text-primary font-semibold text-sm">{item.symbol}</div>
+                                                        <div className="text-slate-500 text-xs">{item.name}</div>
+                                                    </div>
+                                                    <span className="text-xs text-purple-400 font-bold">{item.category}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                             <div className="flex flex-wrap gap-2 mt-3">
                                 {['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ITC', 'AAPL', 'NVDA', 'TATAMOTORS'].map(s => (
                                     <button key={s} onClick={() => { setScreenerTicker(s); handleScreenerSearch(s); }}

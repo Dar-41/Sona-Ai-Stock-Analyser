@@ -837,14 +837,20 @@ const App = () => {
                             ) : (
                                 <div className="h-full bg-black rounded-2xl overflow-hidden">
                                     <iframe
-                                        src={`https://s.tradingview.com/embed-widget/crypto-mkt-screener/?locale=en#${encodeURIComponent(JSON.stringify({
-                                            "width": "100%",
-                                            "height": "100%",
-                                            "defaultColumn": "overview",
-                                            "screener_type": "crypto_mkt",
-                                            "displayCurrency": "USD",
+                                        src={`https://s.tradingview.com/embed-widget/stock-heatmap/?locale=en#${encodeURIComponent(JSON.stringify({
+                                            "exchanges": [],
+                                            "dataSource": "S&P500",
+                                            "grouping": "sector",
+                                            "blockSize": "market_cap_basic",
+                                            "blockColor": "change",
+                                            "symbolUrl": "",
                                             "colorTheme": theme,
-                                            "market": "crypto"
+                                            "hasTopBar": false,
+                                            "isDataSetEnabled": false,
+                                            "isZoomEnabled": true,
+                                            "hasSymbolTooltip": true,
+                                            "width": "100%",
+                                            "height": "100%"
                                         }))}`}
                                         style={{ width: '100%', height: '100%', border: 'none' }}
                                     />

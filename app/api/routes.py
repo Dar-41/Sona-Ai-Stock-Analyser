@@ -1429,59 +1429,79 @@ async def get_heatmap():
         
         tickers = "RELIANCE.NS TCS.NS HDFCBANK.NS INFY.NS ICICIBANK.NS HINDUNILVR.NS SBIN.NS BHARTIARTL.NS ITC.NS BAJFINANCE.NS KOTAKBANK.NS LT.NS HCLTECH.NS ASIANPAINT.NS AXISBANK.NS MARUTI.NS SUNPHARMA.NS TITAN.NS ULTRACEMCO.NS BAJAJFINSV.NS TATASTEEL.NS TATAMOTORS.NS NTPC.NS NESTLEIND.NS M&M.NS POWERGRID.NS JSWSTEEL.NS HINDALCO.NS ADANIENT.NS ONGC.NS TECHM.NS GRASIM.NS WIPRO.NS COALINDIA.NS DRREDDY.NS HDFCLIFE.NS SBILIFE.NS ADANIPORTS.NS BAJAJ-AUTO.NS EICHERMOT.NS DIVISLAB.NS CIPLA.NS APOLLOHOSP.NS TATACONSUM.NS BRITANNIA.NS HEROMOTOCO.NS LTIM.NS SHREECEM.NS UPL.NS"
         
-        data = yf.download(tickers, period="2d", group_by="ticker", progress=False, threads=True)
+        ticker_list = tickers.split()
+        
+        # Download data for all tickers at once
+        try:
+            data = yf.download(ticker_list, period="2d", group_by="ticker", progress=False)
+        except Exception as e:
+            print(f"[HEATMAP] yf.download major failure: {e}")
+            return JSONResponse(content={"error": "Market data provider unavailable"}, status_code=503)
         
         results = []
         import random
         
-        # Handle cases where yf.download might return a different structure for single/no results
-        ticker_list = tickers.split()
         for symbol in ticker_list:
             try:
-                # Get stock data for this symbol
-                if isinstance(data.columns, pd.MultiIndex):
-                    if symbol in data.columns.levels[0]:
-                        stock_data = data[symbol]
+                # Handle MultiIndex or Single Ticker DataFrame
+                if isinstance(data, pd.DataFrame):
+                    if isinstance(data.columns, pd.MultiIndex):
+                        if symbol in data.columns.levels[0]:
+                            stock_data = data[symbol]
+                        else:
+                            continue
                     else:
-                        continue
+                        if len(ticker_list) == 1:
+                            stock_data = data
+                        else:
+                            continue
                 else:
-                    if len(ticker_list) == 1:
-                        stock_data = data
-                    else:
-                        continue
+                    continue
                         
                 if stock_data is not None and len(stock_data) >= 1:
-                    current = stock_data['Close'].iloc[-1]
+                    # Get current price
+                    current_series = stock_data['Close']
+                    if current_series.empty: continue
                     
+                    current = float(current_series.iloc[-1])
+                    if pd.isna(current): continue
+                    
+                    # Calculate change
                     if len(stock_data) >= 2:
-                        prev_close = stock_data['Close'].iloc[-2]
-                        change_pct = ((current - prev_close) / prev_close) * 100
+                        prev_close = float(stock_data['Close'].iloc[-2])
+                        if not pd.isna(prev_close) and prev_close != 0:
+                            change_pct = ((current - prev_close) / prev_close) * 100
+                        else:
+                            change_pct = 0
                     else:
-                        # Fallback to previous close from info if only 1 day returned
                         change_pct = 0 
                     
-                    if pd.isna(current) or pd.isna(change_pct):
-                        continue
+                    if pd.isna(change_pct): change_pct = 0
 
-                    # Randomize market cap weight slightly for a more dynamic treemap look
+                    # Randomize weight for visual variety in treemap
                     weight = random.randint(50, 150)
                     if symbol in ['RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS']: weight = random.randint(250, 350)
                     
                     results.append({
                         "symbol": symbol.replace('.NS', ''),
-                        "change": round(change_pct, 2),
-                        "price": round(current, 2),
+                        "change": round(float(change_pct), 2),
+                        "price": round(float(current), 2),
                         "weight": weight
                     })
             except Exception as e:
-                print(f"[HEATMAP] Symbol {symbol} error: {e}")
+                # Silent skip for individual symbols
                 continue
                 
         if not results:
+            print("[HEATMAP] No results collected")
             return JSONResponse(content={"error": "No heatmap data available at this time"}, status_code=503)
 
         # Sort by change for standard heatmap
-        results.sort(key=lambda x: x['change'], reverse=True)
+        try:
+            results.sort(key=lambda x: x['change'], reverse=True)
+        except:
+            pass
+            
         set_cache(cache_key, results, ttl_seconds=300)
         return JSONResponse(content=results)
     except Exception as e:

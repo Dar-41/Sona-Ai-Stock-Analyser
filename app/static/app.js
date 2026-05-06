@@ -719,34 +719,34 @@ const App = () => {
                         className="p-2 rounded-full hover:bg-slate-500/10 transition-colors"
                         title="Toggle Theme"
                     >
-                        <i data-lucide={theme === 'dark' ? 'sun' : 'moon'} className="w-5 h-5 text-secondary"></i>
+                        <span><i data-lucide={theme === 'dark' ? 'sun' : 'moon'} className="w-5 h-5 text-secondary"></i></span>
                     </button>
                     <button
                         onClick={handleInsights}
                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${showInsights ? 'btn-purple' : 'btn-dark'}`}
                     >
-                        <i data-lucide="sparkles" className="w-4 h-4"></i>
+                        <span><i data-lucide="sparkles" className="w-4 h-4"></i></span>
                         Insights
                     </button>
                     <button
                         onClick={() => setShowHeatmap(true)}
                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${showHeatmap ? 'btn-purple' : 'btn-dark'}`}
                     >
-                        <i data-lucide="grid" className="w-4 h-4"></i>
+                        <span><i data-lucide="grid" className="w-4 h-4"></i></span>
                         Market Map
                     </button>
                     <button
                         onClick={() => { setShowPortfolio(true); if (!portfolioData) fetchPortfolio(); }}
                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${showPortfolio ? 'btn-purple' : 'btn-dark'}`}
                     >
-                        <i data-lucide="pie-chart" className="w-4 h-4"></i>
+                        <span><i data-lucide="pie-chart" className="w-4 h-4"></i></span>
                         Portfolio
                     </button>
                     <button
                         onClick={() => setShowScreener(true)}
                         className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${showScreener ? 'btn-purple' : 'btn-dark'}`}
                     >
-                        <i data-lucide="search" className="w-4 h-4"></i>
+                        <span><i data-lucide="search" className="w-4 h-4"></i></span>
                         Screener
                     </button>
                 </div>
@@ -759,7 +759,7 @@ const App = () => {
                         <div className="p-4 border-b border-border flex justify-between items-center bg-card z-10">
                             <div className="flex items-center gap-4">
                                 <h2 className="text-lg font-bold text-primary flex items-center gap-2">
-                                    <i data-lucide="grid" className="text-blue-400"></i>
+                                    <span><i data-lucide="grid" className="text-blue-400"></i></span>
                                     Market Heatmap
                                 </h2>
                                 {/* Source Selector */}
@@ -783,7 +783,7 @@ const App = () => {
                                 onClick={() => setShowHeatmap(false)}
                                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-full transition-colors flex items-center gap-2"
                             >
-                                <i data-lucide="arrow-left" className="w-4 h-4"></i>
+                                <span><i data-lucide="arrow-left" className="w-4 h-4"></i></span>
                                 Back to Dashboard
                             </button>
                         </div>
@@ -798,7 +798,7 @@ const App = () => {
                                     className="p-2 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white transition-all"
                                     title="Refresh Data"
                                 >
-                                    <i data-lucide="refresh-cw" className={`w-4 h-4 ${heatmapLoading ? 'animate-spin' : ''}`}></i>
+                                    <span><i data-lucide="refresh-cw" className={`w-4 h-4 ${heatmapLoading ? 'animate-spin' : ''}`}></i></span>
                                 </button>
                             </div>
 
@@ -863,7 +863,7 @@ const App = () => {
                         <div className="p-8 border-b border-border flex justify-between items-center bg-card">
                             <div>
                                 <h2 className="text-2xl font-black text-primary flex items-center gap-3">
-                                    <i data-lucide="pie-chart" className="text-purple-400 w-8 h-8"></i>
+                                    <span><i data-lucide="pie-chart" className="text-purple-400 w-8 h-8"></i></span>
                                     AI Portfolio Architect
                                 </h2>
                                 <p className="text-sm text-secondary font-medium">Algorithmic asset allocation based on risk-reward profiling</p>
@@ -872,7 +872,7 @@ const App = () => {
                                 onClick={() => setShowPortfolio(false)}
                                 className="p-3 rounded-full hover:bg-slate-500/10 text-secondary hover:text-primary transition-all"
                             >
-                                <i data-lucide="x" className="w-6 h-6"></i>
+                                <span><i data-lucide="x" className="w-6 h-6"></i></span>
                             </button>
                         </div>
 
@@ -908,7 +908,7 @@ const App = () => {
                                                         }`}
                                                     >
                                                         {risk}
-                                                        {portfolioRisk === risk && <i data-lucide="check-circle" className="w-4 h-4"></i>}
+                                                        {portfolioRisk === risk && <span><i data-lucide="check-circle" className="w-4 h-4"></i></span>}
                                                     </button>
                                                 ))}
                                             </div>
@@ -1019,7 +1019,7 @@ const App = () => {
                                     ) : (
                                         <div className="flex flex-col items-center justify-center h-full py-20 text-center opacity-50">
                                             <div className="w-24 h-24 mb-6 rounded-full bg-slate-900 flex items-center justify-center">
-                                                <i data-lucide="layout" className="w-12 h-12 text-slate-700"></i>
+                                                <span><i data-lucide="layout" className="w-12 h-12 text-slate-700"></i></span>
                                             </div>
                                             <h3 className="text-xl font-black text-primary">Ready to Architect</h3>
                                             <p className="text-sm text-secondary max-w-xs mt-2 font-medium">Adjust your capital and risk appetite then hit Generate to build your institutional-grade portfolio.</p>
@@ -1316,7 +1316,7 @@ const App = () => {
                         <div className="p-6 border-b border-border flex justify-between items-center sticky top-0 bg-card z-10 backdrop-blur-xl">
                             <div>
                                 <h2 className="text-xl font-bold text-primary flex items-center gap-2">
-                                    <i data-lucide="sparkles" className="text-purple-400"></i>
+                                    <span><i data-lucide="sparkles" className="text-purple-400"></i></span>
                                     Quality-Growth Scanner
                                 </h2>
                                 <p className="text-sm text-secondary">Filtering for high-quality stocks with consistent growth</p>
@@ -1325,7 +1325,7 @@ const App = () => {
                                 onClick={() => setShowInsights(false)}
                                 className="p-2 rounded-full hover:bg-slate-500/10 text-secondary hover:text-primary transition-colors"
                             >
-                                <i data-lucide="x" className="w-6 h-6"></i>
+                                <span><i data-lucide="x" className="w-6 h-6"></i></span>
                             </button>
                         </div>
 
@@ -1390,7 +1390,7 @@ const App = () => {
                                                     <td className="px-4 py-4">
                                                         {stock.ocf_positive_3yr ? (
                                                             <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-500/10 text-green-400 text-xs font-bold">
-                                                                <i data-lucide="check-circle" className="w-3 h-3"></i> Positive
+                                                                <span><i data-lucide="check-circle" className="w-3 h-3"></i></span> Positive
                                                             </span>
                                                         ) : (
                                                             <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-500/10 text-red-400 text-xs font-bold">
@@ -1446,7 +1446,7 @@ const App = () => {
                                     className="w-full input-modern rounded-2xl pl-11 pr-4 py-3 text-sm focus:outline-none text-primary placeholder-slate-600 font-medium"
                                     autoComplete="off"
                                 />
-                                <i data-lucide="search" className="w-5 h-5 text-secondary absolute left-3 top-3"></i>
+                                <span><i data-lucide="search" className="w-5 h-5 text-secondary absolute left-3 top-3"></i></span>
                             </form>
 
                             {/* Suggestions Dropdown */}
@@ -1504,28 +1504,28 @@ const App = () => {
                             <div className="grid grid-cols-2 gap-3 mb-6">
                                 <div className="dark-card rounded-2xl p-4">
                                     <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
-                                        <i data-lucide="trending-up" className="w-5 h-5" style={{ color: 'white' }}></i>
+                                        <span><i data-lucide="trending-up" className="w-5 h-5" style={{ color: 'white' }}></i></span>
                                     </div>
                                     <h3 className="text-sm font-bold text-primary mb-1">Smart Signals</h3>
                                     <p className="text-xs text-slate-500">AI-powered BUY/SELL signals</p>
                                 </div>
                                 <div className="dark-card rounded-2xl p-4">
                                     <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
-                                        <i data-lucide="moon" className="w-5 h-5" style={{ color: 'white' }}></i>
+                                        <span><i data-lucide="moon" className="w-5 h-5" style={{ color: 'white' }}></i></span>
                                     </div>
                                     <h3 className="text-sm font-bold text-primary mb-1">Moon Phase</h3>
                                     <p className="text-xs text-slate-500">Lunar cycle trading strategy</p>
                                 </div>
                                 <div className="dark-card rounded-2xl p-4">
                                     <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
-                                        <i data-lucide="layers" className="w-5 h-5" style={{ color: 'white' }}></i>
+                                        <span><i data-lucide="layers" className="w-5 h-5" style={{ color: 'white' }}></i></span>
                                     </div>
                                     <h3 className="text-sm font-bold text-primary mb-1">SMC Analysis</h3>
                                     <p className="text-xs text-slate-500">Order blocks & FVG detection</p>
                                 </div>
                                 <div className="dark-card rounded-2xl p-4">
                                     <div className="w-10 h-10 rounded-xl purple-gradient flex items-center justify-center mb-3">
-                                        <i data-lucide="shield" className="w-5 h-5" style={{ color: 'white' }}></i>
+                                        <span><i data-lucide="shield" className="w-5 h-5" style={{ color: 'white' }}></i></span>
                                     </div>
                                     <h3 className="text-sm font-bold text-primary mb-1">Risk Manager</h3>
                                     <p className="text-xs text-slate-500">Position sizing calculator</p>
@@ -1711,7 +1711,7 @@ const App = () => {
                     {marketData && (
                         <div className="bg-secondary/50 backdrop-blur-xl border border-border rounded-2xl p-6">
                             <h2 className="text-sm font-semibold text-secondary mb-4 uppercase tracking-wider flex items-center gap-2">
-                                <i data-lucide="shield" className="w-4 h-4"></i>
+                                <span><i data-lucide="shield" className="w-4 h-4"></i></span>
                                 Risk Management
                             </h2>
 
@@ -1788,7 +1788,7 @@ const App = () => {
                             <div className="chart-container flex flex-col items-center justify-center" style={{ height: '500px' }}>
                                 <div className="text-center max-w-md">
                                     <div className="w-20 h-20 mx-auto mb-6 rounded-2xl purple-gradient flex items-center justify-center">
-                                        <i data-lucide="bar-chart-3" className="w-10 h-10" style={{ color: 'white' }}></i>
+                                        <span><i data-lucide="bar-chart-3" className="w-10 h-10" style={{ color: 'white' }}></i></span>
                                     </div>
                                     <h3 className="text-2xl font-bold text-primary mb-3">Start Your Analysis</h3>
                                     <p className="text-secondary text-sm mb-6">Search for any stock, crypto, or forex pair to view advanced technical analysis with Smart Money Concepts</p>

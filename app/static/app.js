@@ -489,15 +489,15 @@ const App = () => {
     const handleScreenerSearch = async (symbol) => {
         const target = symbol || screenerTicker;
         if (!target) return;
-        
+
         setScreenerLoading(true);
         setScreenerError(null);
         setStatus(`Fetching Fundamentals for ${target}...`);
-        
+
         try {
             const response = await fetch(`/api/screener/${target}`);
             const data = await response.json();
-            
+
             if (response.ok && data && (data.symbol || data.display_symbol)) {
                 setScreenerData(data);
                 setStatus(`Screener: ${target} Data Loaded`);
@@ -694,8 +694,8 @@ const App = () => {
                                 <p className="text-xs text-secondary mt-0.5">Fundamental analysis at a glance</p>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button 
-                                    onClick={() => { setShowScreener(false); setScreenerData(null); setScreenerTicker(''); }} 
+                                <button
+                                    onClick={() => { setShowScreener(false); setScreenerData(null); setScreenerTicker(''); }}
                                     className="px-4 py-2 rounded-full hover:bg-slate-500/10 text-secondary hover:text-primary transition-colors text-sm font-bold flex items-center gap-2"
                                     title="Back to Dashboard"
                                 >
@@ -773,10 +773,10 @@ const App = () => {
                                                 <span>{screenerData.currency}{screenerData.fifty_two_week_high}</span>
                                             </div>
                                             <div className="w-full bg-slate-700/50 rounded-full h-2 relative">
-                                                <div className="absolute h-2 rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500" style={{width: '100%'}}></div>
+                                                <div className="absolute h-2 rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500" style={{ width: '100%' }}></div>
                                                 {screenerData.fifty_two_week_high > screenerData.fifty_two_week_low && (
                                                     <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full border-2 border-purple-500 shadow-lg"
-                                                        style={{left: `${Math.min(100, Math.max(0, ((screenerData.current_price - screenerData.fifty_two_week_low) / (screenerData.fifty_two_week_high - screenerData.fifty_two_week_low)) * 100))}%`, transform: 'translate(-50%, -50%)'}}></div>
+                                                        style={{ left: `${Math.min(100, Math.max(0, ((screenerData.current_price - screenerData.fifty_two_week_low) / (screenerData.fifty_two_week_high - screenerData.fifty_two_week_low)) * 100))}%`, transform: 'translate(-50%, -50%)' }}></div>
                                                 )}
                                             </div>
                                         </div>
@@ -784,11 +784,12 @@ const App = () => {
                                         {screenerData.sparkline && screenerData.sparkline.length > 2 && (
                                             <div className="mt-4 h-16">
                                                 <svg viewBox={`0 0 ${screenerData.sparkline.length} 50`} className="w-full h-full" preserveAspectRatio="none">
-                                                    <defs><linearGradient id="spkGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={screenerData.price_change >= 0 ? '#10B981' : '#EF4444'} stopOpacity="0.3"/><stop offset="100%" stopColor={screenerData.price_change >= 0 ? '#10B981' : '#EF4444'} stopOpacity="0"/></linearGradient></defs>
-                                                    {(() => { const mn = Math.min(...screenerData.sparkline); const mx = Math.max(...screenerData.sparkline); const rng = mx - mn || 1;
-                                                        const pts = screenerData.sparkline.map((v,i) => `${i},${50 - ((v-mn)/rng)*48}`).join(' ');
-                                                        const area = `0,50 ${pts} ${screenerData.sparkline.length-1},50`;
-                                                        return (<g><polygon points={area} fill="url(#spkGrad)"/><polyline points={pts} fill="none" stroke={screenerData.price_change >= 0 ? '#10B981' : '#EF4444'} strokeWidth="1.5"/></g>);
+                                                    <defs><linearGradient id="spkGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={screenerData.price_change >= 0 ? '#10B981' : '#EF4444'} stopOpacity="0.3" /><stop offset="100%" stopColor={screenerData.price_change >= 0 ? '#10B981' : '#EF4444'} stopOpacity="0" /></linearGradient></defs>
+                                                    {(() => {
+                                                        const mn = Math.min(...screenerData.sparkline); const mx = Math.max(...screenerData.sparkline); const rng = mx - mn || 1;
+                                                        const pts = screenerData.sparkline.map((v, i) => `${i},${50 - ((v - mn) / rng) * 48}`).join(' ');
+                                                        const area = `0,50 ${pts} ${screenerData.sparkline.length - 1},50`;
+                                                        return (<g><polygon points={area} fill="url(#spkGrad)" /><polyline points={pts} fill="none" stroke={screenerData.price_change >= 0 ? '#10B981' : '#EF4444'} strokeWidth="1.5" /></g>);
                                                     })()}
                                                 </svg>
                                             </div>
@@ -800,17 +801,17 @@ const App = () => {
                                         <h4 className="text-xs font-bold text-secondary uppercase tracking-wider mb-3">Valuation & Fundamentals</h4>
                                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                                             {[
-                                                {l:'Market Cap', v: screenerData.market_cap_fmt, c:'text-primary'},
-                                                {l:'PE Ratio', v: screenerData.pe_ratio || 'N/A', c: screenerData.pe_ratio > 0 && screenerData.pe_ratio < 25 ? 'text-green-400' : screenerData.pe_ratio > 40 ? 'text-red-400' : 'text-primary'},
-                                                {l:'Forward PE', v: screenerData.forward_pe || 'N/A', c:'text-primary'},
-                                                {l:'PB Ratio', v: screenerData.pb_ratio || 'N/A', c: screenerData.pb_ratio > 0 && screenerData.pb_ratio < 3 ? 'text-green-400' : 'text-primary'},
-                                                {l:'EV/EBITDA', v: screenerData.ev_ebitda || 'N/A', c:'text-primary'},
-                                                {l:'Book Value', v: `${screenerData.currency}${screenerData.book_value}`, c:'text-primary'},
-                                                {l:'EPS (TTM)', v: `${screenerData.currency}${screenerData.eps}`, c: screenerData.eps > 0 ? 'text-green-400' : 'text-red-400'},
-                                                {l:'ROE', v: `${screenerData.roe}%`, c: screenerData.roe > 15 ? 'text-green-400' : screenerData.roe > 10 ? 'text-yellow-400' : 'text-red-400'},
-                                                {l:'ROCE', v: `${screenerData.roce}%`, c: screenerData.roce > 15 ? 'text-green-400' : screenerData.roce > 10 ? 'text-yellow-400' : 'text-red-400'},
-                                                {l:'Div Yield', v: `${screenerData.dividend_yield}%`, c: screenerData.dividend_yield > 2 ? 'text-green-400' : 'text-primary'},
-                                            ].map((m,i) => (
+                                                { l: 'Market Cap', v: screenerData.market_cap_fmt, c: 'text-primary' },
+                                                { l: 'PE Ratio', v: screenerData.pe_ratio || 'N/A', c: screenerData.pe_ratio > 0 && screenerData.pe_ratio < 25 ? 'text-green-400' : screenerData.pe_ratio > 40 ? 'text-red-400' : 'text-primary' },
+                                                { l: 'Forward PE', v: screenerData.forward_pe || 'N/A', c: 'text-primary' },
+                                                { l: 'PB Ratio', v: screenerData.pb_ratio || 'N/A', c: screenerData.pb_ratio > 0 && screenerData.pb_ratio < 3 ? 'text-green-400' : 'text-primary' },
+                                                { l: 'EV/EBITDA', v: screenerData.ev_ebitda || 'N/A', c: 'text-primary' },
+                                                { l: 'Book Value', v: `${screenerData.currency}${screenerData.book_value}`, c: 'text-primary' },
+                                                { l: 'EPS (TTM)', v: `${screenerData.currency}${screenerData.eps}`, c: screenerData.eps > 0 ? 'text-green-400' : 'text-red-400' },
+                                                { l: 'ROE', v: `${screenerData.roe}%`, c: screenerData.roe > 15 ? 'text-green-400' : screenerData.roe > 10 ? 'text-yellow-400' : 'text-red-400' },
+                                                { l: 'ROCE', v: `${screenerData.roce}%`, c: screenerData.roce > 15 ? 'text-green-400' : screenerData.roce > 10 ? 'text-yellow-400' : 'text-red-400' },
+                                                { l: 'Div Yield', v: `${screenerData.dividend_yield}%`, c: screenerData.dividend_yield > 2 ? 'text-green-400' : 'text-primary' },
+                                            ].map((m, i) => (
                                                 <div key={i} className="dark-card rounded-xl p-3 hover:scale-[1.02] transition-transform">
                                                     <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 font-bold">{m.l}</div>
                                                     <div className={`text-lg font-black ${m.c}`}>{m.v}</div>
@@ -824,11 +825,11 @@ const App = () => {
                                         <h4 className="text-xs font-bold text-secondary uppercase tracking-wider mb-3">Financial Health</h4>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                             {[
-                                                {l:'D/E Ratio', v: screenerData.debt_to_equity, c: screenerData.debt_to_equity < 50 ? 'text-green-400' : screenerData.debt_to_equity < 100 ? 'text-yellow-400' : 'text-red-400'},
-                                                {l:'Current Ratio', v: screenerData.current_ratio, c: screenerData.current_ratio >= 1.5 ? 'text-green-400' : screenerData.current_ratio >= 1 ? 'text-yellow-400' : 'text-red-400'},
-                                                {l:'Net Margin', v: `${screenerData.net_profit_margin}%`, c: screenerData.net_profit_margin > 15 ? 'text-green-400' : 'text-primary'},
-                                                {l:'Op. Margin', v: `${screenerData.operating_margin}%`, c: screenerData.operating_margin > 20 ? 'text-green-400' : 'text-primary'},
-                                            ].map((m,i) => (
+                                                { l: 'D/E Ratio', v: screenerData.debt_to_equity, c: screenerData.debt_to_equity < 50 ? 'text-green-400' : screenerData.debt_to_equity < 100 ? 'text-yellow-400' : 'text-red-400' },
+                                                { l: 'Current Ratio', v: screenerData.current_ratio, c: screenerData.current_ratio >= 1.5 ? 'text-green-400' : screenerData.current_ratio >= 1 ? 'text-yellow-400' : 'text-red-400' },
+                                                { l: 'Net Margin', v: `${screenerData.net_profit_margin}%`, c: screenerData.net_profit_margin > 15 ? 'text-green-400' : 'text-primary' },
+                                                { l: 'Op. Margin', v: `${screenerData.operating_margin}%`, c: screenerData.operating_margin > 20 ? 'text-green-400' : 'text-primary' },
+                                            ].map((m, i) => (
                                                 <div key={i} className="dark-card rounded-xl p-3">
                                                     <div className="text-[10px] text-slate-500 uppercase tracking-wider mb-1 font-bold">{m.l}</div>
                                                     <div className={`text-lg font-black ${m.c}`}>{m.v}</div>
@@ -844,11 +845,11 @@ const App = () => {
                                             <h4 className="text-xs font-bold text-secondary uppercase tracking-wider mb-4">Growth Metrics</h4>
                                             <div className="space-y-4">
                                                 {[
-                                                    {l:'Sales CAGR (5Y)', v: screenerData.sales_cagr_5yr},
-                                                    {l:'Profit CAGR (5Y)', v: screenerData.profit_cagr_5yr},
-                                                    {l:'Revenue Growth (YoY)', v: screenerData.revenue_growth},
-                                                    {l:'Earnings Growth (YoY)', v: screenerData.earnings_growth},
-                                                ].map((g,i) => (
+                                                    { l: 'Sales CAGR (5Y)', v: screenerData.sales_cagr_5yr },
+                                                    { l: 'Profit CAGR (5Y)', v: screenerData.profit_cagr_5yr },
+                                                    { l: 'Revenue Growth (YoY)', v: screenerData.revenue_growth },
+                                                    { l: 'Earnings Growth (YoY)', v: screenerData.earnings_growth },
+                                                ].map((g, i) => (
                                                     <div key={i}>
                                                         <div className="flex justify-between text-sm mb-1">
                                                             <span className="text-secondary">{g.l}</span>
@@ -858,7 +859,7 @@ const App = () => {
                                                         </div>
                                                         <div className="w-full bg-slate-700/40 rounded-full h-2 overflow-hidden">
                                                             <div className={`h-full rounded-full transition-all duration-700 ${g.v > 10 ? 'bg-green-500' : g.v > 0 ? 'bg-yellow-500' : 'bg-red-500'}`}
-                                                                style={{width: `${Math.min(100, Math.max(5, Math.abs(g.v) * 2))}%`}}></div>
+                                                                style={{ width: `${Math.min(100, Math.max(5, Math.abs(g.v) * 2))}%` }}></div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -870,10 +871,10 @@ const App = () => {
                                             <h4 className="text-xs font-bold text-secondary uppercase tracking-wider mb-4">Shareholding Pattern</h4>
                                             <div className="space-y-4">
                                                 {[
-                                                    {l:'FII / Institutional', v: screenerData.institutional_holding, color:'bg-blue-500', tc:'text-blue-400'},
-                                                    {l:'Promoter / Insider', v: screenerData.insider_holding, color:'bg-purple-500', tc:'text-purple-400'},
-                                                    {l:'Public / Others', v: screenerData.public_holding, color:'bg-slate-500', tc:'text-slate-400'},
-                                                ].map((s,i) => (
+                                                    { l: 'FII / Institutional', v: screenerData.institutional_holding, color: 'bg-blue-500', tc: 'text-blue-400' },
+                                                    { l: 'Promoter / Insider', v: screenerData.insider_holding, color: 'bg-purple-500', tc: 'text-purple-400' },
+                                                    { l: 'Public / Others', v: screenerData.public_holding, color: 'bg-slate-500', tc: 'text-slate-400' },
+                                                ].map((s, i) => (
                                                     <div key={i}>
                                                         <div className="flex justify-between text-sm mb-1">
                                                             <span className="text-secondary">{s.l}</span>
@@ -881,7 +882,7 @@ const App = () => {
                                                         </div>
                                                         <div className="w-full bg-slate-700/40 rounded-full h-3 overflow-hidden">
                                                             <div className={`h-full rounded-full ${s.color} transition-all duration-700`}
-                                                                style={{width: `${Math.min(100, s.v)}%`}}></div>
+                                                                style={{ width: `${Math.min(100, s.v)}%` }}></div>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -904,7 +905,7 @@ const App = () => {
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-border">
-                                                        {screenerData.quarterly.map((q,i) => (
+                                                        {screenerData.quarterly.map((q, i) => (
                                                             <tr key={i} className="hover:bg-slate-500/5">
                                                                 <td className="px-4 py-3 font-bold text-primary">{q.quarter}</td>
                                                                 <td className="px-4 py-3 text-right text-secondary font-mono">{q.revenue_fmt}</td>
@@ -920,7 +921,7 @@ const App = () => {
 
                                     {/* Action */}
                                     <div className="flex justify-center pt-2 pb-2">
-                                        <button onClick={() => { setTicker(screenerData.display_symbol); setShowScreener(false); setScreenerData(null); handleManualSearch({preventDefault:()=>{}}); }}
+                                        <button onClick={() => { setTicker(screenerData.display_symbol); setShowScreener(false); setScreenerData(null); handleManualSearch({ preventDefault: () => { } }); }}
                                             className="btn-purple px-8 py-3 rounded-2xl text-sm font-bold flex items-center gap-2">
                                             <span>📈</span> Full Technical Analysis
                                         </button>
